@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <nav>
+        <h1>Operating System Algorithm Simulator</h1>
+
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/cpu">CPU Scheduling</a>
+            <a href="/memory">Memory Management</a>
+            <a href="/page-replacement">Page Replacement</a>
+            <a href="/disk">Disk Scheduling</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>
