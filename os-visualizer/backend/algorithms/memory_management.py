@@ -29,7 +29,7 @@ def first_fit(block_sizes: List[int], requests: List[Dict]) -> Dict[str, Any]:
         
         # First Fit: scan from beginning
         for block in blocks:
-            if block.is_free and block.size >= req.size:
+            if not block.is_allocated and block.size >= req.size:
                 allocate_block(block, req, blocks)
                 allocated = True
                 step['block_id'] = block.id
@@ -73,7 +73,7 @@ def best_fit(block_sizes: List[int], requests: List[Dict]) -> Dict[str, Any]:
         best_fit_size = float('inf')
         
         for block in blocks:
-            if block.is_free and block.size >= req.size:
+            if not block.is_allocated and block.size >= req.size:
                 # Check if this block is a better fit (smaller)
                 if block.size < best_fit_size:
                     best_fit_size = block.size
@@ -121,7 +121,7 @@ def best_available_fit(block_sizes, requests, min_fragment_size: int = 2):
         # Find all blocks that fit
         fitting_blocks = []
         for block in blocks:
-            if block.is_free and block.size >= req.size:
+            if not block.is_allocated and block.size >= req.size:
                 remaining = block.size - req.size
                 fitting_blocks.append({
                     'block': block,
