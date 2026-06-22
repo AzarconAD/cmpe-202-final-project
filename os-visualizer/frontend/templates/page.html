@@ -1,19 +1,242 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <a href="/" class="back-btn">&larr; Back to Dashboard</a>
+<div class="container unique-page-layout">
+    <div class="nav-control-strip">
+        <a href="/" class="back-link-btn">&larr; Return to Dashboard</a>
+    </div>
 
-    <h2>Page Replacement</h2>
+    <div class="content-heading">
+        <h2>Page Replacement Simulator</h2>
+        <p class="subtitle">Simulate demand paging mechanisms and track memory hits vs cache evictions across virtual memory frames.</p>
+    </div>
 
-    <div class="panel">
-        <div class="input-box">
-            <h3>Input</h3>
+    <div class="setup-row">
+        <div class="setup-card">
+            <label for="algo-select" class="field-lbl">Replacement Strategy</label>
+            <select id="algo-select" class="custom-select">
+                <option value="fifo" selected>FIFO (First-In, First-Out)</option>
+                <option value="optimal">Optimal (Clairvoyant Replacement)</option>
+                <option value="lru">LRU (Least Recently Used)</option>
+                <option value="lru_approx">LRU Approximation (Second Chance)</option>
+                <option value="lfu">LFU (Least Frequently Used)</option>
+            </select>
+
+            <label for="frame-input" class="field-lbl">Physical Memory Frames</label>
+            <input type="number" id="frame-input" class="custom-field-input" value="3" min="1" max="7">
+            
+            <div class="execution-actions">
+                <button id="trigger-sim-btn" class="action-btn execution-accent">Compute Frames</button>
+                <button id="clear-sim-btn" class="action-btn clear-accent">Reset Form</button>
+            </div>
         </div>
 
-        <div class="output-box">
-            <h3>Output</h3>
+        <div class="setup-card full-span-card">
+            <label class="field-lbl">Build Page Reference String</label>
+            <div class="entry-field-group">
+                <input type="number" id="page-input" placeholder="Page Number (0-9)" min="0">
+                <button id="push-page-btn" class="append-btn">Append Page</button>
+            </div>
+            
+            <div class="string-preview-container">
+                <span class="label-heading">Current Reference String:</span>
+                <div id="string-matrix" class="pill-matrix"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="metrics-summary-row" class="metrics-grid" style="display: none;">
+        <div class="metric-card hit-card">
+            <span class="metric-title">Page Hits</span>
+            <h3 id="metric-hits">0</h3>
+        </div>
+        <div class="metric-card fault-card">
+            <span class="metric-title">Page Faults</span>
+            <h3 id="metric-faults">0</h3>
+        </div>
+        <div class="metric-card ratio-card">
+            <span class="metric-title">Hit Ratio</span>
+            <h3 id="metric-ratio">0.0%</h3>
+        </div>
+    </div>
+
+    <div id="frame-results-log-wrapper" style="display: none; margin: 25px 0;">
+        <div id="frame-results-log-container" style="display: flex; gap: 8px; flex-wrap: wrap; background: transparent;">
+            </div>
+    </div>
+
+    <div class="display-board page-board" style="display: none;">
+        <div class="board-column wide-column">
+            <div class="board-header">
+                <h3>Frame Memory Execution Trace</h3>
+            </div>
+            <div class="table-scroll-wrapper">
+                <table id="trace-matrix-table" class="matrix-table">
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    let referenceString = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]; 
+
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshStringUI();
+    });
+
+    document.getElementById('push-page-btn').addEventListener('click', () => {
+        const field = document.getElementById('page-input');
+        const pageNum = parseInt(field.value);
+        if (!isNaN(pageNum) && pageNum >= 0) {
+            referenceString.push(pageNum);
+            field.value = '';
+            refreshStringUI();
+        }
+    });
+
+    function refreshStringUI() {
+        const target = document.getElementById('string-matrix');
+        if(!referenceString.length) {
+            target.innerHTML = `<span class="empty-msg-lbl">No pages appended yet.</span>`;
+            return;
+        }
+        target.innerHTML = referenceString.map((p, idx) => `
+            <span class="page-pill">
+                ${p}
+                <button class="remove-pill-btn" onclick="dropPage(${idx})">&times;</button>
+            </span>
+        `).join('');
+    }
+
+    function dropPage(index) {
+        referenceString.splice(index, 1);
+        refreshStringUI();
+    }
+
+    document.getElementById('clear-sim-btn').addEventListener('click', () => {
+        referenceString = [];
+        refreshStringUI();
+        document.getElementById('metrics-summary-row').style.display = 'none';
+        document.getElementById('frame-results-log-wrapper').style.display = 'none';
+        document.querySelector('.page-board').style.display = 'none';
+    });
+
+    document.getElementById('trigger-sim-btn').addEventListener('click', async () => {
+        if (!referenceString.length) {
+            alert("Please append at least one page to the reference string simulation framework.");
+            return;
+        }
+
+        const payload = {
+            algorithm: document.getElementById('algo-select').value,
+            frames: document.getElementById('frame-input').value,
+            reference_string: referenceString
+        };
+
+        try {
+            const response = await fetch('/simulate/page', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                renderExecutionGrid(data);
+            } else {
+                alert(data.error || "Execution processing crashed.");
+            }
+        } catch (error) {
+            console.error("Transmission error:", error);
+        }
+    });
+
+    function renderExecutionGrid(data) {
+        // Render Scoreboard Cards
+        document.getElementById('metric-hits').innerText = data.hit;
+        document.getElementById('metric-faults').innerText = data.fault;
+        document.getElementById('metric-ratio').innerText = `${(data.ratio_hit * 100).toFixed(1)}%`;
+        document.getElementById('metrics-summary-row').style.display = 'grid';
+
+        // Populate sequence stream frame elements
+        const summaryContainer = document.getElementById('frame-results-log-container');
+        summaryContainer.innerHTML = '';
+        
+        data.steps.forEach((step) => {
+            const blockNode = document.createElement('div');
+            
+            // Set dynamic background color based on step type
+            let cellBg = step.hit ? '#1f6feb' : '#da3637'; 
+            
+            blockNode.style.cssText = `
+                width: 45px; 
+                height: 45px; 
+                background: ${cellBg}; 
+                color: #ffffff; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 1.15rem; 
+                font-weight: bold; 
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            `;
+            
+            // FIXED: Using step.page instead of step.value to prevent 'undefined' values
+            blockNode.innerText = step.page;
+            summaryContainer.appendChild(blockNode);
+        });
+        document.getElementById('frame-results-log-wrapper').style.display = 'block';
+
+        // Render Frame Execution Matrix Table Trace Below
+        const table = document.getElementById('trace-matrix-table');
+        table.innerHTML = '';
+
+        // Header Stream Input Row
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = `<th class="sticky-side-th">Incoming Page</th>` + data.steps.map(s => `
+            <th class="stream-head-cell">${s.page}</th>
+        `).join('');
+        table.appendChild(headerRow);
+
+        // Render Frame Allocation Traversal Rows
+        const totalFrames = parseInt(document.getElementById('frame-input').value);
+        for (let fIdx = 0; fIdx < totalFrames; fIdx++) {
+            const row = document.createElement('tr');
+            let rowHTML = `<td class="frame-label-td">Frame ${fIdx + 1}</td>`;
+            
+            data.steps.forEach((step, stepIdx) => {
+                const value = step.frames[fIdx];
+                const displayVal = (value !== null && value !== undefined) ? value : '-';
+                
+                let extraClass = "";
+                if (!step.hit && step.evicted === null && displayVal !== '-') {
+                    const previousStepIdx = stepIdx - 1;
+                    if (previousStepIdx < 0 || data.steps[previousStepIdx].frames[fIdx] !== value) {
+                        extraClass = "fresh-load-cell";
+                    }
+                } else if (!step.hit && step.evicted !== null && step.frames[fIdx] === step.page) {
+                    const previousStepIdx = stepIdx - 1;
+                    if (previousStepIdx >= 0 && data.steps[previousStepIdx].frames[fIdx] !== value) {
+                        extraClass = "evicted-replace-cell";
+                    }
+                }
+
+                rowHTML += `<td class="matrix-cell ${extraClass}">${displayVal}</td>`;
+            });
+            row.innerHTML = rowHTML;
+            table.appendChild(row);
+        }
+
+        // Hit / Fault Evaluation Status Footer Row
+        const statusRow = document.createElement('tr');
+        statusRow.innerHTML = `<td class="sticky-side-th status-title-td">Status</td>` + data.steps.map(s => `
+            <td class="status-cell ${s.hit ? 'hit-bg' : 'fault-bg'}">${s.hit ? 'HIT' : 'FAULT'}</td>
+        `).join('');
+        table.appendChild(statusRow);
+
+        document.querySelector('.page-board').style.display = 'block';
+    }
+</script>
 {% endblock %}
