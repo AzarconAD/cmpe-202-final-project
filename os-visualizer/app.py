@@ -22,10 +22,16 @@ def simulate_cpu():
     algorithm = data.get("algorithm", "fcfs")
     processes = data.get("processes", [])
     quantum = data.get("quantum", 4)
-    
+
     try:
-        # Executes the requested scheduling algorithm on the provided process parameters
-        result = run_algorithm(algorithm, processes, quantum=quantum, quantum_system=quantum)
+        if algorithm == "round_robin":
+            result = run_algorithm(algorithm, processes, quantum=quantum)
+        elif algorithm == "mlq":
+            result = run_algorithm(algorithm, processes, quantum_system=quantum)
+        elif algorithm == "mlfq":
+            result = run_algorithm(algorithm, processes)
+        else:
+            result = run_algorithm(algorithm, processes)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400

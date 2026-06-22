@@ -2,8 +2,8 @@ import heapq
 from collections import deque
 from typing import List, Dict, Any
 
-from models.process import Process
-from utils.helpers import calculate_metrics, build_result
+from backend.models.process import Process
+from backend.utils.helpers import calculate_metrics, build_result
 
 # ============= FCFS =============
 def fcfs(processes: List[Dict]) -> Dict[str, Any]:
@@ -112,18 +112,22 @@ def priority(processes: List[Dict], aging_interval: int = 5) -> Dict[str, Any]:
     ready_queue = []
     visited = [False] * n
     last_aging_time = 0
+    last_pid = None
     
     while completed < n:
         for i, p in enumerate(procs):
             if p.arrival <= current_time and not visited[i]:
+                if p.priority is None:
+                    p.priority = 0
                 heapq.heappush(ready_queue, (p.priority, p.arrival, i, p))
                 visited[i] = True
         
         if current_time - last_aging_time >= aging_interval:
             new_ready_queue = []
-            for priority, arrival, i, p in ready_queue:
-                p.priority = max(0, p.priority - 1)
-                heapq.heappush(new_ready_queue, (p.priority, p.arrival, i, p))
+            for priority, arrival, pid, p in ready_queue:
+                if pid != last_pid:           # don't age the process currently holding the CPU
+                    p.priority = max(0, p.priority - 1)
+                heapq.heappush(new_ready_queue, (p.priority, p.arrival, p.pid, p))
             ready_queue = new_ready_queue
             last_aging_time = current_time
         
@@ -159,13 +163,16 @@ def priority_preemptive(processes: List[Dict], aging_interval: int = 5) -> Dict[
         while i < n and procs[i].arrival <= current_time:
             p = procs[i]
             p.remaining = p.burst
+            if p.priority is None:
+                p.priority = 0
             heapq.heappush(ready_queue, (p.priority, p.arrival, p.pid, p))
             i += 1
         
         if current_time - last_aging_time >= aging_interval:
             new_ready_queue = []
             for priority, arrival, pid, p in ready_queue:
-                p.priority = max(0, p.priority - 1)
+                if pid != last_pid:           # don't age the process currently holding the CPU
+                    p.priority = max(0, p.priority - 1)
                 heapq.heappush(new_ready_queue, (p.priority, p.arrival, p.pid, p))
             ready_queue = new_ready_queue
             last_aging_time = current_time
