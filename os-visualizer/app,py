@@ -1,0 +1,41 @@
+from flask import Flask, render_template
+import os
+
+app = Flask(
+    __name__,
+    template_folder="frontend/templates",
+    static_folder="frontend/static"
+)
+
+print("Current working directory:", os.getcwd())
+print("Template folder:", app.template_folder)
+print("Template exists?", os.path.exists(app.template_folder))
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+
+@app.route("/cpu")
+def cpu():
+    return render_template("cpu.html")
+
+
+@app.route("/memory")
+def memory():
+    return render_template("memory.html")
+
+
+@app.route("/page-replacement")
+def page_replacement():
+    return render_template("page.html")
+
+
+@app.route("/disk")
+def disk():
+    return render_template("disk.html")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

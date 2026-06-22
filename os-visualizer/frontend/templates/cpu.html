@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container">
+    <a href="/" class="back-btn">&larr; Back to Dashboard</a>
 
-<h2>CPU Scheduling</h2>
+    <h2>CPU Scheduling</h2>
 
-<div class="panel">
+    <p>Select a scheduling algorithm:</p>
 
-    <div class="input-box">
-        <h3>Input</h3>
-        <p>CPU scheduling inputs go here.</p>
-    </div>
-
-    <div class="output-box">
-        <h3>Output</h3>
-        <p>Results will show here.</p>
-    </div>
-
+    <form>
+        <label>Algorithm:</label>
+        <select>
+            <option>FCFS</option>
+            <option>SJF</option>
+            <option>Priority</option>
+            <option>Round Robin</option>
+        </select>
+    </form>
 </div>
-
 {% endblock %}
