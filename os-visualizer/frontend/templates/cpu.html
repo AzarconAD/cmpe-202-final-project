@@ -1,21 +1,245 @@
+Here is your fully updated and unified `cpu.html` file code.
+
+By restructuring the label elements inside each `segmentWrapper` to use absolute positioning relative to their container boundaries and adding a CSS `transform: translateX(50%)` to the termination values, it creates a clean timeline. A single timestamp prints exactly centered directly beneath the divider line between your process blocks (e.g., `5`, `9`, etc.), while the global `0` is preserved at the very beginning.
+
+```html
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container">
     <a href="/" class="back-btn">&larr; Back to Dashboard</a>
 
-    <h2>CPU Scheduling</h2>
+    <h2>CPU Scheduling Simulation</h2>
+    
+    <div class="panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+        <div class="input-box" style="background: var(--card-bg); padding: 25px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <h3>Configuration</h3>
+            <form id="simulatorForm" style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="display:block; margin-bottom: 5px;">Algorithm:</label>
+                    <select id="algoSelect" style="width:100%; padding: 8px; background: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px;">
+                        <option value="fcfs">First Come First Served (FCFS)</option>
+                        <option value="sjf">Shortest Job First (SJF Non-Preemptive)</option>
+                        <option value="sjf_preemptive">Shortest Remaining Time First (SRTF Preemptive)</option>
+                        <option value="priority">Priority (Non-Preemptive)</option>
+                        <option value="priority_preemptive">Priority (Preemptive)</option>
+                        <option value="round_robin">Round Robin (RR)</option>
+                        <option value="mlq">Multi-Level Queue (MLQ)</option>
+                        <option value="mlfq">Multi-Level Feedback Queue (MLFQ)</option>
+                    </select>
+                </div>
 
-    <p>Select a scheduling algorithm:</p>
+                <div id="quantumContainer" style="display:none;">
+                    <label style="display:block; margin-bottom: 5px;">Time Quantum:</label>
+                    <input type="number" id="quantumInput" value="4" min="1" style="width:100%; padding: 8px; background: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px;">
+                </div>
 
-    <form>
-        <label>Algorithm:</label>
-        <select>
-            <option>FCFS</option>
-            <option>SJF</option>
-            <option>Priority</option>
-            <option>Round Robin</option>
-        </select>
-    </form>
+                <div>
+                    <label style="display:block; margin-bottom: 5px;">Processes:</label>
+                    <table id="processTable" style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 5px;">PID</th>
+                                <th style="padding: 5px;">Arrival</th>
+                                <th style="padding: 5px;">Burst</th>
+                                <th class="priority-head" style="padding: 5px; display:none;">Priority</th>
+                                <th class="queue-head" style="padding: 5px; display:none;">Queue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="proc-row">
+                                <td><input type="text" value="P1" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" value="5" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="priority-cell" style="display:none;"><input type="number" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="queue-cell" style="display:none;">
+                                    <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
+                                        <option value="system">System</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr class="proc-row">
+                                <td><input type="text" value="P2" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" value="1" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" value="3" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="priority-cell" style="display:none;"><input type="number" value="2" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="queue-cell" style="display:none;">
+                                    <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
+                                        <option value="system">System</option>
+                                        <option value="user" selected>User</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" id="addBtn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 5px 10px; border-radius: 4px; cursor: pointer;">+ Add Row</button>
+                </div>
+
+                <button type="submit" style="background: var(--accent-blue); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;">Run Simulation</button>
+            </form>
+        </div>
+
+        <div class="output-box" style="background: var(--card-bg); padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 20px;">
+            <h3>Simulation Output</h3>
+            <div id="outputPlaceholder" style="color: var(--text-muted);">Configure values and click run to visualize calculation metrics.</div>
+            
+            <div id="resultsContainer" style="display: none; flex-direction: column; gap: 20px;">
+                <div>
+                    <h4>Gantt Chart</h4>
+                    <div id="ganttChart" style="display: flex; width: 100%; height: auto; background: transparent; border-radius: 4px; overflow: visible; border: none;"></div>
+                </div>
+
+                <div>
+                    <h4>Performance Metrics</h4>
+                    <p>Average Waiting Time: <strong id="avgWait" style="color: var(--accent-blue);">0</strong> ms</p>
+                    <p>Average Turnaround Time: <strong id="avgTurn" style="color: var(--accent-blue);">0</strong> ms</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+// Toggles time quantum field and extra columns depending on algorithm selection
+document.getElementById('algoSelect').addEventListener('change', function() {
+    const val = this.value;
+    document.getElementById('quantumContainer').style.display = (val === 'round_robin' || val === 'mlq') ? 'block' : 'none';
+    
+    const isPriority = val.includes('priority');
+    document.querySelectorAll('.priority-head, .priority-cell').forEach(el => el.style.display = isPriority ? 'table-cell' : 'none');
+    
+    const isMlq = val === 'mlq';
+    document.querySelectorAll('.queue-head, .queue-cell').forEach(el => el.style.display = isMlq ? 'table-cell' : 'none');
+});
+
+// Appends additional rows dynamically into the process scheduling table
+document.getElementById('addBtn').addEventListener('click', function() {
+    const tbody = document.querySelector('#processTable tbody');
+    const rowCount = tbody.rows.length + 1;
+    const isPriority = document.getElementById('algoSelect').value.includes('priority');
+    const isMlq = document.getElementById('algoSelect').value === 'mlq';
+    
+    const tr = document.createElement('tr');
+    tr.className = 'proc-row';
+    tr.innerHTML = `
+        <td><input type="text" value="P${rowCount}" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td><input type="number" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td><input type="number" value="4" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td class="priority-cell" style="display:${isPriority ? 'table-cell' : 'none'};"><input type="number" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td class="queue-cell" style="display:${isMlq ? 'table-cell' : 'none'};">
+            <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
+                <option value="system">System</option>
+                <option value="user">User</option>
+            </select>
+        </td>
+    `;
+    tbody.appendChild(tr);
+});
+
+// Handles async payload submittal and visual chart reconstruction
+document.getElementById('simulatorForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const rows = document.querySelectorAll('.proc-row');
+    const processes = Array.from(rows).map(row => ({
+        pid: row.querySelector('.p-id').value,
+        arrival: parseInt(row.querySelector('.p-arrival').value) || 0,
+        burst: parseInt(row.querySelector('.p-burst').value) || 1,
+        priority: parseInt(row.querySelector('.p-priority').value) || 1,
+        queue: row.querySelector('.p-queue').value
+    }));
+
+    const algorithm = document.getElementById('algoSelect').value;
+    const quantum = parseInt(document.getElementById('quantumInput').value) || 4;
+
+    fetch('/simulate/cpu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ algorithm, processes, quantum })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert("Simulation Error: " + data.error);
+            return;
+        }
+        document.getElementById('outputPlaceholder').style.display = 'none';
+        document.getElementById('resultsContainer').style.display = 'flex';
+        
+        document.getElementById('avgWait').innerText = data.avg_waiting.toFixed(2);
+        document.getElementById('avgTurn').innerText = data.avg_turnaround.toFixed(2);
+        
+        const chart = document.getElementById('ganttChart');
+        chart.innerHTML = '';
+        
+        // Setup parent tracking layout attributes
+        chart.style.display = 'flex';
+        chart.style.flexDirection = 'row';
+        chart.style.height = 'auto';
+        chart.style.background = 'transparent';
+        chart.style.border = 'none';
+        chart.style.overflow = 'visible';
+
+        const totalDuration = data.gantt.length ? data.gantt[data.gantt.length - 1].end : 1;
+        
+        data.gantt.forEach((block, index) => {
+            const widthPct = ((block.end - block.start) / totalDuration) * 100;
+            
+            // Outer block container wrapping block + absolute positioned timestamps
+            const segmentWrapper = document.createElement('div');
+            segmentWrapper.style.width = `${widthPct}%`;
+            segmentWrapper.style.display = 'flex';
+            segmentWrapper.style.flexDirection = 'column';
+            segmentWrapper.style.position = 'relative';
+            
+            // 1. Process block element 
+            const blockEl = document.createElement('div');
+            blockEl.style.height = '40px';
+            blockEl.style.background = '#58a6ff';
+            blockEl.style.borderRight = '1px solid #0d1117';
+            blockEl.style.display = 'flex';
+            blockEl.style.alignItems = 'center';
+            blockEl.style.justifyContent = 'center';
+            blockEl.style.fontSize = '12px';
+            blockEl.style.color = '#000';
+            blockEl.style.fontWeight = 'bold';
+            blockEl.innerText = block.pid;
+            blockEl.title = `Process: ${block.pid} | Duration: ${block.start}ms - ${block.end}ms`;
+            segmentWrapper.appendChild(blockEl);
+            
+            // 2. Clear wrapper container handling relative alignment 
+            const timeLabelRow = document.createElement('div');
+            timeLabelRow.style.position = 'relative';
+            timeLabelRow.style.height = '16px';
+            timeLabelRow.style.marginTop = '4px';
+            timeLabelRow.style.fontSize = '10px';
+            timeLabelRow.style.color = 'var(--text-muted)';
+            
+            // Render the global starting timestamp '0' ONLY under the first element block
+            if (index === 0) {
+                const startStr = document.createElement('span');
+                startStr.innerText = block.start;
+                startStr.style.position = 'absolute';
+                startStr.style.left = '0';
+                startStr.style.transform = 'translateX(-50%)'; // Center '0' accurately below left-most edge
+                timeLabelRow.appendChild(startStr);
+            }
+            
+            // Render block endpoints centered directly underneath cell splitting lines
+            const endStr = document.createElement('span');
+            endStr.innerText = block.end;
+            endStr.style.position = 'absolute';
+            endStr.style.right = '0';
+            endStr.style.transform = 'translateX(50%)'; // Center perfectly over the block boundary line
+            
+            timeLabelRow.appendChild(endStr);
+            segmentWrapper.appendChild(timeLabelRow);
+            chart.appendChild(segmentWrapper);
+        });
+    });
+});
+</script>
 {% endblock %}
+
+```

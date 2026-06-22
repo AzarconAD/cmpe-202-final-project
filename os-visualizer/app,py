@@ -1,5 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 import os
+from cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
 
 app = Flask(
     __name__,
@@ -7,35 +8,39 @@ app = Flask(
     static_folder="frontend/static"
 )
 
-print("Current working directory:", os.getcwd())
-print("Template folder:", app.template_folder)
-print("Template exists?", os.path.exists(app.template_folder))
-
-
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 @app.route("/cpu")
 def cpu():
     return render_template("cpu.html")
 
+@app.route("/simulate/cpu", methods=["POST"])
+def simulate_cpu():
+    data = request.get_json() or {}
+    algorithm = data.get("algorithm", "fcfs")
+    processes = data.get("processes", [])
+    quantum = data.get("quantum", 4)
+    
+    try:
+        # Executes the requested scheduling algorithm on the provided process parameters
+        result = run_algorithm(algorithm, processes, quantum=quantum, quantum_system=quantum)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route("/memory")
 def memory():
     return render_template("memory.html")
 
-
 @app.route("/page-replacement")
 def page_replacement():
     return render_template("page.html")
 
-
 @app.route("/disk")
 def disk():
     return render_template("disk.html")
-
 
 if __name__ == "__main__":
     app.run(debug=True)
