@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
 from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
+from backend.algorithms.memory_management import run_memory_algorithm
 
 app = Flask(
     __name__,
@@ -40,13 +41,19 @@ def simulate_cpu():
 def memory():
     return render_template("memory.html")
 
-@app.route("/page-replacement")
-def page_replacement():
-    return render_template("page.html")
+@app.route("/simulate/memory", methods=["POST"])
+def simulate_memory():
+    data = request.get_json() or {}
+    
+    algorithm = data.get("algorithm", "first_fit")
+    block_sizes = data.get("block_sizes", [])
+    requests_list = data.get("requests", [])
 
-@app.route("/disk")
-def disk():
-    return render_template("disk.html")
-
+    try:
+        result = run_memory_algorithm(algorithm, block_sizes, requests_list)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
