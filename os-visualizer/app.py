@@ -1,0 +1,52 @@
+from flask import Flask, render_template, request, jsonify
+import os
+from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
+
+app = Flask(
+    __name__,
+    template_folder="frontend/templates",
+    static_folder="frontend/static"
+)
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/cpu")
+def cpu():
+    return render_template("cpu.html")
+
+@app.route("/simulate/cpu", methods=["POST"])
+def simulate_cpu():
+    data = request.get_json() or {}
+    algorithm = data.get("algorithm", "fcfs")
+    processes = data.get("processes", [])
+    quantum = data.get("quantum", 4)
+
+    try:
+        if algorithm == "round_robin":
+            result = run_algorithm(algorithm, processes, quantum=quantum)
+        elif algorithm == "mlq":
+            result = run_algorithm(algorithm, processes, quantum_system=quantum)
+        elif algorithm == "mlfq":
+            result = run_algorithm(algorithm, processes)
+        else:
+            result = run_algorithm(algorithm, processes)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/memory")
+def memory():
+    return render_template("memory.html")
+
+@app.route("/page-replacement")
+def page_replacement():
+    return render_template("page.html")
+
+@app.route("/disk")
+def disk():
+    return render_template("disk.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)

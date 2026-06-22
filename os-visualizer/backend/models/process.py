@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
-from utils.helpers import valid_int, valid_request_queue, valid_direction, valid_reference
+from backend.utils.validators import valid_int, valid_request_queue, valid_direction, valid_reference
 
 @dataclass
 class Process:

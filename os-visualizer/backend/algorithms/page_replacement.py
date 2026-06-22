@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from models.process import PageReplacementAlgorithm, PageResult, PageStep
+from backend.models.process import PageReplacementAlgorithm, PageResult, PageStep
 
 
 class FIFOPageReplacement(PageReplacementAlgorithm):

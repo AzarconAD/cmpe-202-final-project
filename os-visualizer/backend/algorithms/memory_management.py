@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 
-from models.process import MemoryRequest
-from utils.helpers import initialize_memory, allocate_block, build_memory_result
+from backend.models.process import MemoryRequest
+from backend.utils.helpers import initialize_memory, allocate_block, build_memory_result
 
 # ============= FIRST FIT =============
 def first_fit(block_sizes: List[int], requests: List[Dict]) -> Dict[str, Any]:
