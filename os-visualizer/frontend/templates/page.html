@@ -34,7 +34,7 @@
         <div class="setup-card full-span-card">
             <label class="field-lbl">Build Page Reference String</label>
             <div class="entry-field-group">
-                <input type="number" id="page-input" placeholder="Page Number (0-9)" min="0">
+                <input type="number" id="page-input" placeholder="Page Number (0-9)" min="0" max="9">
                 <button id="push-page-btn" class="append-btn">Append Page</button>
             </div>
             
@@ -88,10 +88,12 @@
     document.getElementById('push-page-btn').addEventListener('click', () => {
         const field = document.getElementById('page-input');
         const pageNum = parseInt(field.value);
-        if (!isNaN(pageNum) && pageNum >= 0) {
+        if (!isNaN(pageNum) && pageNum >= 0 && pageNum <= 9) {
             referenceString.push(pageNum);
             field.value = '';
             refreshStringUI();
+        } else {    
+            alert("Please enter a valid page number between 0 and 9.");
         }
     });
 
