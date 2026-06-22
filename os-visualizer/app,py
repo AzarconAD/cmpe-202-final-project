@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import os
-from cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
+from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
 
 app = Flask(
     __name__,
