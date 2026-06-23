@@ -728,157 +728,176 @@ main {
 .tracking-waiting { color: #f85149; }
 
 /* ==========================================
-   Page replacement visualization
+   10. REVISED PAGE REPLACEMENT BLUEPRINT
    ========================================== */
-.simulator-workspace-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-  align-items: start;
-  margin-top: 24px;
+.unique-page-layout {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.custom-field-input {
   width: 100%;
-}
-
-.workspace-left-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.metrics-summary-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-
-.metrics-summary-sidebar .metric-counter-card {
-  background-color: #161b22;
-  border: 1px solid #30363d;
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
   border-radius: 6px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  padding: 10px;
+  font-size: 0.9rem;
+  outline: none;
+  margin-bottom: 20px;
 }
 
-.workspace-right-panel {
-  width: 100%;
-  overflow: hidden;
+.full-span-card {
+  grid-column: span 2;
 }
 
-/* Visualization Header Title */
-.visualization-title {
-  font-size: 1.15rem;
-  color: #f0f6fc;
-  margin: 0 0 12px 0;
-  font-weight: 600;
+@media(max-width: 850px) {
+  .full-span-card { grid-column: span 1; }
 }
 
-.matrix-scroll-container {
+.string-preview-container {
+  margin-top: 20px;
+  background-color: var(--bg-dark);
+  border: 1px dashed var(--border-color);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.string-preview-container .label-heading {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 10px;
+}
+
+.page-pill {
+  background-color: var(--card-bg);
+  border: 1px solid #1f6feb;
+  color: var(--accent-blue);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-msg-lbl {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Operational Performance Scoreboard Cards */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.metric-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.metric-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.metric-card h3 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.hit-card { border-top: 3px solid #56d364; }
+.fault-card { border-top: 3px solid #f85149; }
+.ratio-card { border-top: 3px solid var(--accent-blue); }
+
+/* Execution Trace Grid Matrix Data Tables */
+.table-scroll-wrapper {
   width: 100%;
   overflow-x: auto;
-  background-color: #0d1117;
-  padding: 24px 16px;
   border-radius: 6px;
-  border: 1px solid #30363d;
+  border: 1px solid var(--border-color);
+  background-color: #0d1117;
 }
 
-.unified-matrix-table {
-  border-collapse: separate;
-  border-spacing: 10px 6px;
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
   text-align: center;
   font-family: monospace;
 }
 
-.matrix-side-label {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #8b949e !important;
-  text-align: right;
-  padding-right: 15px;
-  white-space: nowrap;
-  min-width: 90px;
+.matrix-table th, .matrix-table td {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  min-width: 60px;
 }
 
-/* Clear definitions to strip borders/backgrounds entirely from the top row left spacer */
-.cell-spacer-clear {
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
+.matrix-table th {
+  background-color: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
-.matrix-cell-node {
-  width: 56px;
-  height: 44px;
-  vertical-align: middle;
-  font-size: 1.05rem;
+.sticky-side-th, .frame-label-td {
+  background-color: var(--card-bg) !important;
   font-weight: bold;
-  border-radius: 6px;
-  border: 1px solid #30363d !important;
-  background-color: #161b22 !important;
-  color: #f0f6fc !important;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  color: var(--text-main);
+  text-align: left;
+  font-family: var(--font-family);
 }
 
-.unified-matrix-table td, 
-.unified-matrix-table th {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+.stream-head-cell {
+  color: var(--accent-blue) !important;
+  font-size: 1.1rem !important;
+  font-weight: bold;
 }
 
-.incoming-header-cell {
-  background-color: #21262d !important;
-  border: 1px solid #58a6ff !important;
-  color: #58a6ff !important;
+.matrix-cell {
+  font-size: 1.05rem;
+  color: var(--text-main);
 }
 
-.cell-empty {
-  color: #484f58 !important;
-  opacity: 0.4 !important;
+/* Algorithmic Condition Visual Cell Flags */
+.fresh-load-cell {
+  background-color: rgba(56, 139, 253, 0.15);
+  border: 1px solid var(--accent-blue);
 }
 
-.cell-hit-highlight {
-  background-color: rgba(46, 160, 67, 0.25) !important;
-  border: 2px solid #3fb950 !important;
-  color: #56d364 !important;
+.evicted-replace-cell {
+  background-color: rgba(248, 81, 73, 0.1);
+  border: 1px solid #f85149;
 }
 
-.cell-replaced-highlight {
-  background-color: rgba(56, 166, 255, 0.25) !important;
-  border: 2px solid #58a6ff !important;
-  color: #79c0ff !important;
+.status-cell {
+  font-weight: bold;
+  font-size: 0.8rem;
+  font-family: var(--font-family);
 }
 
-/* Premium Success Green Button Action Styling */
-.action-success-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #238636;
-  color: #ffffff;
-  border: 1px solid rgba(240, 246, 252, 0.1);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+.hit-bg {
+  background-color: rgba(46, 160, 67, 0.15);
+  color: #56d364;
 }
 
-.action-success-btn:hover {
-  background-color: #2ea043;
+.fault-bg {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #f85149;
 }
 
-.action-success-btn:active {
-  transform: scale(0.98);
-}
-
-.color-hit { color: #56d364 !important; }
-.color-fault { color: #ff7b72 !important; }
-.color-ratio { color: #58a6ff !important; }
-
-@media (max-width: 992px) {
-  .simulator-workspace-grid {
-    grid-template-columns: 1fr;
-  }
-}
