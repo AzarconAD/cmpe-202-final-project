@@ -127,11 +127,11 @@ class PageReplacementAlgorithm(ABC):
 
         return PageStep(
             pg=pg,
-            frm=list(frames),
+            frm=[x for x in frames if x is not None],
             status="Hit" if hit else "Fault",
             replaced_page=replaced_page,
         )
-    
+
     def _res(
         self,
         hit: int,
