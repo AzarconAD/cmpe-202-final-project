@@ -52,22 +52,13 @@ def simulate_memory():
     requests_list = data.get("requests", [])
 
     try:
-        # Reject non-numeric, boolean, negative, and zero block sizes
-        safe_blocks = []
-        for b in block_sizes:
-            if isinstance(b, bool):
-                continue
-            try:
-                b_int = int(b)
-            except (TypeError, ValueError):
-                continue
-            if b_int > 0:
-                safe_blocks.append(b_int)
+        # Protect block size lists mapping
+        safe_blocks = [int(b) for b in block_sizes if str(b).isdigit() or isinstance(b, int)]
         result = run_memory_algorithm(algorithm, safe_blocks, requests_list)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    
+
 @app.route("/page-replacement")
 def page_replacement():
     return render_template("page.html")
@@ -85,18 +76,6 @@ def simulate_page():
         safe_reference = [int(x) for x in reference_string]
         
         result = run_page_algorithm(algorithm, safe_reference, frames_count)
-
-                # Translate backend field names into what page.html's JS expects
-        result["steps"] = [
-            {
-                "page": s["pg"],
-                "frames": s["frm"],
-                "hit": s["status"] == "Hit",
-                "evicted": s["replaced_page"],
-            }
-            for s in result["steps"]
-        ]
-        
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400

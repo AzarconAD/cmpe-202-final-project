@@ -113,15 +113,6 @@ async function runDiskSimulation() {
     const direction = document.getElementById("direction").value;
     const rawQueue = document.getElementById("req").value;
 
-    const ALGO_LABELS = {
-        fcfs: "FCFS",
-        sstf: "SSTF",
-        scan: "SCAN",
-        cscan: "C-SCAN",
-        look: "LOOK",
-        clook: "C-LOOK"
-    };
-
     const request_queue = rawQueue.split(',')
         .map(x => x.trim())
         .filter(x => x !== "")
@@ -129,24 +120,6 @@ async function runDiskSimulation() {
 
     if (request_queue.length === 0 || request_queue.some(isNaN)) {
         alert("Please provide a valid comma-separated list of track numbers.");
-        return;
-    }
-
-    const headNum = parseInt(initial_head, 10);
-    const sizeNum = parseInt(disk_size, 10);
-
-    if (isNaN(headNum) || isNaN(sizeNum)) {
-        alert("Please provide valid numbers for the initial head position and disk size.");
-        return;
-    }
-
-    if (sizeNum <= 0) {
-        alert("Disk size must be greater than 0.");
-        return;
-    }
-
-    if (headNum < 0 || headNum >= sizeNum) {
-        alert(`Initial head position must be between 0 and ${sizeNum - 1}.`);
         return;
     }
 
@@ -166,22 +139,23 @@ async function runDiskSimulation() {
             })
         });
 
+        if (!response.ok) throw new Error("Disk microservice returned an invalid response code.");
         const data = await response.json();
 
-        if (!response.ok || data.error) {
-            throw new Error(data.error || "Disk microservice returned an invalid response code.");
+        if (data.error) {
+            throw new Error(data.error);
         }
 
         // Print details instantly to UI Elements
         document.getElementById("seek-time").innerText = data.total_seek_time ?? data.move ?? 0;
-
-        // Replaced .innerText with .innerHTML to cleanly compile HTML Entities
+        
+        // FIX: Replaced .innerText with .innerHTML to cleanly compile HTML Entities
         const sequenceArr = data.seek_sequence || data.order || [];
         document.getElementById("seek-sequence").innerHTML = sequenceArr.length > 0 ? sequenceArr.join(" &rarr; ") : "-";
 
         // Log to terminal window
         document.getElementById("disk-terminal").innerHTML = `
-            <div class="terminal-row"><span style="color:#58a6ff;">[ALGO]:</span> Running ${ALGO_LABELS[algorithm] || algorithm.toUpperCase()} Operations</div>
+            <div class="terminal-row"><span style="color:#58a6ff;">[ALGO]:</span> Running ${algorithm.toUpperCase()} Operations</div>
             <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${initial_head}</div>
             <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${disk_size - 1}</div>
             <div class="terminal-row status-line" style="color:#56d364;">Simulation computed instantly! Total Movement: ${data.total_seek_time ?? data.move} cylinders.</div>
