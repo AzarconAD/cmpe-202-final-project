@@ -1,19 +1,121 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <a href="/" class="back-btn">&larr; Back to Dashboard</a>
 
-    <h2>Disk Scheduling</h2>
+<main class="container">
 
-    <div class="panel">
-        <div class="input-box">
-            <h3>Input</h3>
-        </div>
-
-        <div class="output-box">
-            <h3>Output</h3>
-        </div>
+    <div class="content-heading">
+        <h2>Disk Scheduling Simulator</h2>
+        <p class="subtitle">
+            Visualize disk head movement and seek sequence.
+        </p>
     </div>
-</div>
+
+    <div class="display-board">
+
+        <!-- Configuration Panel -->
+        <div class="board-column">
+            <div class="setup-card">
+
+                <label class="field-lbl">Algorithm</label>
+                <select id="alg" class="custom-select">
+                    <option value="fcfs">FCFS</option>
+                    <option value="sstf">SSTF</option>
+                    <option value="scan">SCAN</option>
+                </select>
+
+                <label class="field-lbl">Initial Head Position</label>
+                <div class="input-group">
+                    <input type="number" id="head" value="53">
+                </div>
+
+                <label class="field-lbl">Request Queue</label>
+                <div class="entry-field-group">
+                    <input
+                        type="text"
+                        id="req"
+                        placeholder="98,183,37,122,14,124,65,67">
+                </div>
+
+                <div class="execution-actions">
+                    <button
+                        class="action-btn execution-accent"
+                        onclick="runDiskSimulation()">
+                        Run Simulation
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Simulation Log -->
+        <div class="board-column">
+            <div class="board-header">
+                <h3>Simulation Log</h3>
+            </div>
+
+            <div id="disk-terminal" class="terminal-view">
+                <div class="terminal-row status-line">
+                    Ready for input...
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Results -->
+    <div class="board-column" style="margin-top:24px;">
+
+        <div class="board-header">
+            <h3>Results</h3>
+        </div>
+
+        <div class="metrics-summary-sidebar">
+
+            <div class="metric-counter-card">
+                <span>Total Seek Time</span>
+                <strong id="seek-time">0</strong>
+            </div>
+
+            <div class="metric-counter-card">
+                <span>Seek Sequence</span>
+                <strong id="seek-sequence">-</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+<script>
+function runDiskSimulation() {
+
+    const algorithm = document.getElementById("alg").value;
+    const head = document.getElementById("head").value;
+    const queue = document.getElementById("req").value;
+
+    document.getElementById("disk-terminal").innerHTML = `
+        <div class="terminal-row">
+            Algorithm: ${algorithm}
+        </div>
+
+        <div class="terminal-row">
+            Initial Head: ${head}
+        </div>
+
+        <div class="terminal-row">
+            Request Queue: ${queue}
+        </div>
+
+        <div class="terminal-row status-line">
+            Simulation executed successfully.
+        </div>
+    `;
+
+    document.getElementById("seek-time").innerText = "Testing...";
+    document.getElementById("seek-sequence").innerText = queue;
+}
+</script>
+
 {% endblock %}

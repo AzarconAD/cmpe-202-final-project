@@ -3,9 +3,7 @@ import os
 from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
 from backend.algorithms.memory_management import run_memory_algorithm
 from backend.algorithms.page_replacement import run_page_algorithm  # Import the page replacement module
-
-# Optional: Uncomment when your disk backend is ready
-# from backend.algorithms.disk_scheduling import run_disk_algorithm 
+from backend.algorithms.disk_scheduling import run_disk_algorithm
 
 app = Flask(
     __name__,
@@ -55,17 +53,8 @@ def simulate_memory():
     requests_list = data.get("requests", [])
 
     try:
-        # Reject non-numeric, boolean, negative, and zero block sizes
-        safe_blocks = []
-        for b in block_sizes:
-            if isinstance(b, bool):
-                continue
-            try:
-                b_int = int(b)
-            except (TypeError, ValueError):
-                continue
-            if b_int > 0:
-                safe_blocks.append(b_int) 
+        # Protect block size lists mapping
+        safe_blocks = [int(b) for b in block_sizes if str(b).isdigit() or isinstance(b, int)]
         result = run_memory_algorithm(algorithm, safe_blocks, requests_list)
         return jsonify(result)
     except Exception as e:
@@ -88,18 +77,6 @@ def simulate_page():
         safe_reference = [int(x) for x in reference_string]
         
         result = run_page_algorithm(algorithm, safe_reference, frames_count)
-
-            # Translate backend field names into what page.html's JS expects
-        result["steps"] = [
-            {
-                "page": s["pg"],
-                "frames": s["frm"],
-                "hit": s["status"] == "Hit",
-                "evicted": s["replaced_page"],
-            }
-            for s in result["steps"]
-        ]
-
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -113,22 +90,14 @@ def simulate_disk():
     data = request.get_json() or {}
     algorithm = data.get("algorithm", "fcfs")
     request_queue = data.get("request_queue", [])
-    direction = data.get("direction", "left")
+    direction = data.get("direction", "right")
 
     try:
         initial_head = int(data.get("initial_head", 50))
         disk_size = int(data.get("disk_size", 200))
-        safe_queue = [int(q) for q in request_queue]
+        safe_queue = [int(q) for q in request_queue if str(q).isdigit()]
 
-        # Placeholder integration for your disk algorithm runner module
-        # result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
-        result = {
-            "status": "Disk simulation route verified successfully!",
-            "algorithm": algorithm,
-            "head": initial_head,
-            "size": disk_size,
-            "queue_length": len(safe_queue)
-        }
+        result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
