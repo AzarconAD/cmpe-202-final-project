@@ -1,19 +1,230 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <a href="/" class="back-btn">&larr; Back to Dashboard</a>
+<div class="container unique-mem-layout">
+    <div class="nav-control-strip">
+        <a href="/" class="back-link-btn">&larr; Return to Dashboard</a>
+    </div>
 
-    <h2>Memory Management</h2>
+    <div class="content-heading">
+        <h2>Memory Allocation Simulator</h2>
+        <p class="subtitle"> </p>
+    </div>
 
-    <div class="panel">
-        <div class="input-box">
-            <h3>Input</h3>
+    <div class="setup-row">
+        <div class="setup-card">
+            <label for="algo-select" class="field-lbl">Allocation Strategy</label>
+            <select id="algo-select" class="custom-select">
+                <option value="first_fit" selected>First Fit (Sequential Match)</option>
+                <option value="best_fit">Best Fit (Minimum Fragmentation)</option>
+                <option value="best_available_fit">Best Available Fit (Threshold Balanced)</option>
+                <option value="worst_fit">Worst Fit (Maximum Leftover)</option>
+            </select>
+            
+            <div class="execution-actions">
+                <button id="trigger-sim-btn" class="action-btn execution-accent">Compute Placement</button>
+                <button id="clear-sim-btn" class="action-btn clear-accent">Clear All</button>
+            </div>
         </div>
 
-        <div class="output-box">
-            <h3>Output</h3>
+        <div class="setup-card">
+            <label class="field-lbl">Configure Memory Partitions</label>
+            <div class="entry-field-group">
+                <input type="number" id="partition-input" placeholder="Block capacity (KB)" min="1">
+                <button id="push-partition-btn" class="append-btn">Add Block</button>
+            </div>
+            <div id="partition-badge-box" class="pill-matrix"></div>
+        </div>
+
+        <div class="setup-card">
+            <label class="field-lbl">Define Request Queue</label>
+            <div class="entry-field-group">
+                <input type="number" id="process-input" placeholder="Required Size (KB)" min="1">
+                <button id="push-process-btn" class="append-btn">Queue Job</button>
+            </div>
+            <ol id="process-queue-box" class="ordered-job-list"></ol>
+        </div>
+    </div>
+
+    <div class="display-board">
+        <div class="board-column visual-column">
+            <div class="board-header">
+                <h3>Physical Memory Map</h3>
+                <div class="status-legend">
+                    <span class="indicator unallocated"></span> Free Space
+                    <span class="indicator occupied"></span> Process Map
+                </div>
+            </div>
+            
+            <div id="physical-memory-strip" class="hardware-canvas">
+                </div>
+            <div class="metric-footer">
+                <span id="capacity-total">Aggregate Size: 0 KB</span>
+            </div>
+        </div>
+
+        <div class="board-column records-column">
+            <div class="board-header">
+                <h3>Step-by-Step Diagnostic Trace</h3>
+            </div>
+            <div id="trace-terminal" class="terminal-view">
+                <div class="terminal-row placeholder-line">Waiting for initialization parameters...</div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    let blockSizes = [100, 500, 200, 300, 600]; // Preset default items
+    let allocationRequests = [
+        { process_id: 'P1', size: 212 },
+        { process_id: 'P2', size: 417 },
+        { process_id: 'P3', size: 112 },
+        { process_id: 'P4', size: 426 }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshPartitionUI();
+        refreshRequestQueueUI();
+    });
+
+    // Partition Mutation Utilities
+    document.getElementById('push-partition-btn').addEventListener('click', () => {
+        const field = document.getElementById('partition-input');
+        const cap = parseInt(field.value);
+        if (cap > 0) {
+            blockSizes.push(cap);
+            field.value = '';
+            refreshPartitionUI();
+        }
+    });
+
+    function refreshPartitionUI() {
+        const target = document.getElementById('partition-badge-box');
+        let accumulatedSum = 0;
+        
+        target.innerHTML = blockSizes.map((val, idx) => {
+            accumulatedSum += val;
+            return `
+                <span class="memory-pill">
+                    B${idx + 1}: ${val} KB
+                    <button class="remove-pill-btn" onclick="dropBlock(${idx})">&times;</button>
+                </span>
+            `;
+        }).join('');
+        
+        document.getElementById('capacity-total').innerText = `Aggregate Size: ${accumulatedSum} KB`;
+        renderEmptyStateMemoryMap();
+    }
+
+    // Process Allocation Utilities
+    document.getElementById('push-process-btn').addEventListener('click', () => {
+        const field = document.getElementById('process-input');
+        const size = parseInt(field.value);
+        if (size > 0) {
+            allocationRequests.push({ process_id: `P${allocationRequests.length + 1}`, size: size });
+            field.value = '';
+            refreshRequestQueueUI();
+        }
+    });
+
+    function refreshRequestQueueUI() {
+        const target = document.getElementById('process-queue-box');
+        target.innerHTML = allocationRequests.map((req, idx) => `
+            <li class="job-item">
+                <span><strong>${req.process_id}</strong> (${req.size} KB)</span>
+                <button class="drop-job-btn" onclick="dropRequest(${idx})">Delete</button>
+            </li>
+        `).join('');
+    }
+
+    function dropBlock(index) { blockSizes.splice(index, 1); refreshPartitionUI(); }
+    function dropRequest(index) { allocationRequests.splice(index, 1); refreshRequestQueueUI(); }
+
+    function renderEmptyStateMemoryMap() {
+        const target = document.getElementById('physical-memory-strip');
+        target.innerHTML = blockSizes.map(size => `
+            <div class="hardware-cell unassigned-cell" style="flex-grow: ${size}">
+                <span class="cell-capacity">${size} KB</span>
+                <span class="cell-occupant">Unallocated</span>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('clear-sim-btn').addEventListener('click', () => {
+        blockSizes = [];
+        allocationRequests = [];
+        refreshPartitionUI();
+        refreshRequestQueueUI();
+        document.getElementById('trace-terminal').innerHTML = '<div class="terminal-row status-line">[System State] Input values cleared.</div>';
+    });
+
+    // Endpoint Connectivity Integration
+    document.getElementById('trigger-sim-btn').addEventListener('click', async () => {
+        if (!blockSizes.length || !allocationRequests.length) {
+            alert("Ensure both memory boundaries and size requests are fully populated.");
+            return;
+        }
+
+        const payload = {
+            algorithm: document.getElementById('algo-select').value,
+            block_sizes: blockSizes,
+            requests: allocationRequests
+        };
+
+        try {
+            const response = await fetch('/simulate/memory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const schemaData = await response.json();
+
+            if (response.ok) {
+                renderEvaluationOutput(schemaData);
+            } else {
+                alert(schemaData.error || "Simulation evaluation failed.");
+            }
+        } catch (error) {
+            console.error("Networking interface crash:", error);
+        }
+    });
+
+    function renderEvaluationOutput(data) {
+        // Output Layout Hardware Strip Mapping
+        const canvas = document.getElementById('physical-memory-strip');
+        canvas.innerHTML = data.blocks.map(b => {
+            if (b.is_allocated) {
+                return `
+                    <div class="hardware-cell assigned-cell" style="flex-grow: ${b.size}">
+                        <span class="cell-capacity">${b.size} KB</span>
+                        <span class="cell-occupant">${b.process_id}</span>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="hardware-cell unassigned-cell" style="flex-grow: ${b.size}">
+                        <span class="cell-capacity">${b.size} KB</span>
+                        <span class="cell-occupant">Free</span>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        // Output Terminal Tracer Mapping
+        const consoleLog = document.getElementById('trace-terminal');
+        consoleLog.innerHTML = '';
+        data.steps.forEach(st => {
+            const outputRow = document.createElement('div');
+            outputRow.className = `terminal-row tracking-${st.action}`;
+            
+            if (st.action === 'allocated') {
+                outputRow.innerHTML = `🏁 <b>${st.request}</b> allocated successfully into Block Segment ID <u>${st.block_id}</u> (${st.size} KB).`;
+            } else {
+                outputRow.innerHTML = `⚠️ <b>${st.request}</b> with size ${st.size} KB failed allocation -> placed in waiting register.`;
+            }
+            consoleLog.appendChild(outputRow);
+        });
+    }
+</script>
 {% endblock %}
