@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from models.process import DiskSchedulingAlgorithm, DiskResult, DiskStep
+from backend.models.process import DiskSchedulingAlgorithm, DiskResult, DiskStep
 
 
 class FCFSDiskScheduling(DiskSchedulingAlgorithm):

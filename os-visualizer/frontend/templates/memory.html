@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <a href="/" class="back-btn">&larr; Back to Dashboard</a>
+
+    <h2>Memory Management</h2>
+
+    <div class="setup-row">
+        <div class="setup-card">
+            <label for="algo-select" class="field-lbl">Allocation Strategy</label>
+            <select id="algo-select" class="custom-select">
+                <option value="first_fit" selected>First Fit (Sequential Match)</option>
+                <option value="best_fit">Best Fit (Minimum Fragmentation)</option>
+                <option value="best_available_fit">Best Available Fit (Threshold Balanced)</option>
+            </select>
+            
+            <div class="execution-actions">
+                <button id="trigger-sim-btn" class="action-btn execution-accent">Compute Placement</button>
+                <button id="clear-sim-btn" class="action-btn clear-accent">Clear All</button>
+            </div>
+        </div>
+
+        <div class="output-box">
+            <h3>Output</h3>
+        </div>
+    </div>
+</div>
+{% endblock %}
