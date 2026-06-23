@@ -95,10 +95,18 @@ def simulate_disk():
     try:
         initial_head = int(data.get("initial_head", 50))
         disk_size = int(data.get("disk_size", 200))
-        safe_queue = [int(q) for q in request_queue if str(q).isdigit()]
+        
+        # Cleanly stringify and filter queue inputs to protect against type cast failures
+        safe_queue = [int(q) for q in request_queue if str(q).strip().lstrip('-').isdigit()]
 
-        result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
-        return jsonify(result)
+        # Compute results from your operational layer
+        raw_result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
+        
+        # Standardize properties to match exactly what your script fetches
+        return jsonify({
+            "total_seek_time": raw_result.get("move", raw_result.get("total_seek_time", 0)),
+            "seek_sequence": raw_result.get("order", raw_result.get("seek_sequence", []))
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

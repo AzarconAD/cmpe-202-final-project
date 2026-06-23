@@ -1,85 +1,102 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <main class="container">
+    <div class="nav-control-strip">
+        <a href="/" class="back-link-btn">&larr; Return to Dashboard</a>
+    </div>
 
     <div class="content-heading">
         <h2>Disk Scheduling Simulator</h2>
         <p class="subtitle">
-            Visualize disk head movement and seek sequence.
+            Visualize disk head movement and track overall seek times across secondary memory storage configurations.
         </p>
     </div>
 
     <div class="display-board">
 
-        <!-- Configuration Panel -->
         <div class="board-column">
             <div class="setup-card">
 
                 <label class="field-lbl">Algorithm</label>
                 <select id="alg" class="custom-select">
-                    <option value="fcfs">FCFS</option>
-                    <option value="sstf">SSTF</option>
-                    <option value="scan">SCAN</option>
+                    <option value="fcfs" selected>FIFO (First-Come, First-Served)</option>
+                    <option value="sstf">SSTF (Shortest Seek Time First)</option>
+                    <option value="scan">SCAN (Elevator Algorithm)</option>
+                    <option value="cscan">C-SCAN (Circular SCAN)</option>
+                    <option value="look">LOOK</option>
+                    <option value="clook">C-LOOK</option>
                 </select>
 
                 <label class="field-lbl">Initial Head Position</label>
                 <div class="input-group">
-                    <input type="number" id="head" value="53">
+                    <input type="number" id="head" class="custom-field-input" value="53" min="0">
                 </div>
 
-                <label class="field-lbl">Request Queue</label>
+                <label class="field-lbl">Disk Track Boundaries (Size)</label>
+                <div class="input-group">
+                    <input type="number" id="disk_size" class="custom-field-input" value="200" min="1">
+                </div>
+
+                <label class="field-lbl">Scan Seek Direction</label>
+                <select id="direction" class="custom-select">
+                    <option value="left">Left (Decreasing Tracks)</option>
+                    <option value="right" selected>Right (Increasing Tracks)</option>
+                </select>
+
+                <label class="field-lbl">Track Request Queue</label>
                 <div class="entry-field-group">
                     <input
                         type="text"
                         id="req"
-                        placeholder="98,183,37,122,14,124,65,67">
+                        class="custom-field-input"
+                        value="98, 183, 37, 122, 14, 124, 65, 67"
+                        placeholder="e.g., 98, 183, 37">
                 </div>
 
                 <div class="execution-actions">
                     <button
-                        class="action-btn execution-accent"
+                        class="action-success-btn"
                         onclick="runDiskSimulation()">
-                        Run Simulation
+                        Execute Simulation
                     </button>
                 </div>
 
             </div>
         </div>
 
-        <!-- Simulation Log -->
         <div class="board-column">
-            <div class="board-header">
-                <h3>Simulation Log</h3>
-            </div>
-
-            <div id="disk-terminal" class="terminal-view">
-                <div class="terminal-row status-line">
-                    Ready for input...
+            <div class="terminal-card">
+                <div class="terminal-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="terminal-title">Simulation Logs</span>
+                </div>
+                <div class="terminal-body" id="disk-terminal">
+                    <div class="terminal-row status-line">System idle. Awaiting operational command input sequence...</div>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Results -->
     <div class="board-column" style="margin-top:24px;">
 
         <div class="board-header">
-            <h3>Results</h3>
+            <h3 class="visualization-title">Metrics Summary</h3>
         </div>
 
-        <div class="metrics-summary-sidebar">
+        <div class="metrics-summary-sidebar" style="flex-direction: row; display: flex; gap: 16px;">
 
-            <div class="metric-counter-card">
-                <span>Total Seek Time</span>
-                <strong id="seek-time">0</strong>
+            <div class="metric-counter-card" style="flex: 1;">
+                <span class="metric-label">Total Seek Track Steps</span>
+                <strong id="seek-time" class="metric-value color-fault" style="font-size: 2rem;">0</strong>
             </div>
 
-            <div class="metric-counter-card">
-                <span>Seek Sequence</span>
-                <strong id="seek-sequence">-</strong>
+            <div class="metric-counter-card" style="flex: 1;">
+                <span class="metric-label">Execution Seek Sequence Order</span>
+                <strong id="seek-sequence" class="metric-value color-ratio" style="font-size: 1.25rem; font-family: monospace; word-break: break-all;">-</strong>
             </div>
 
         </div>
@@ -89,33 +106,66 @@
 </main>
 
 <script>
-function runDiskSimulation() {
-
+async function runDiskSimulation() {
     const algorithm = document.getElementById("alg").value;
-    const head = document.getElementById("head").value;
-    const queue = document.getElementById("req").value;
+    const initial_head = document.getElementById("head").value;
+    const disk_size = document.getElementById("disk_size").value;
+    const direction = document.getElementById("direction").value;
+    const rawQueue = document.getElementById("req").value;
 
-    document.getElementById("disk-terminal").innerHTML = `
-        <div class="terminal-row">
-            Algorithm: ${algorithm}
-        </div>
+    const request_queue = rawQueue.split(',')
+        .map(x => x.trim())
+        .filter(x => x !== "")
+        .map(x => parseInt(x, 10));
 
-        <div class="terminal-row">
-            Initial Head: ${head}
-        </div>
+    if (request_queue.length === 0 || request_queue.some(isNaN)) {
+        alert("Please provide a valid comma-separated list of track numbers.");
+        return;
+    }
 
-        <div class="terminal-row">
-            Request Queue: ${queue}
-        </div>
+    document.getElementById("seek-time").innerText = "Computing...";
+    document.getElementById("seek-sequence").innerText = "Calculating path...";
 
-        <div class="terminal-row status-line">
-            Simulation executed successfully.
-        </div>
-    `;
+    try {
+        const response = await fetch('/simulate/disk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                algorithm,
+                initial_head,
+                disk_size,
+                direction,
+                request_queue
+            })
+        });
 
-    document.getElementById("seek-time").innerText = "Testing...";
-    document.getElementById("seek-sequence").innerText = queue;
+        if (!response.ok) throw new Error("Disk microservice returned an invalid response code.");
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Print details instantly to UI Elements
+        document.getElementById("seek-time").innerText = data.total_seek_time ?? data.move ?? 0;
+        
+        // FIX: Replaced .innerText with .innerHTML to cleanly compile HTML Entities
+        const sequenceArr = data.seek_sequence || data.order || [];
+        document.getElementById("seek-sequence").innerHTML = sequenceArr.length > 0 ? sequenceArr.join(" &rarr; ") : "-";
+
+        // Log to terminal window
+        document.getElementById("disk-terminal").innerHTML = `
+            <div class="terminal-row"><span style="color:#58a6ff;">[ALGO]:</span> Running ${algorithm.toUpperCase()} Operations</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${initial_head}</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${disk_size - 1}</div>
+            <div class="terminal-row status-line" style="color:#56d364;">Simulation computed instantly! Total Movement: ${data.total_seek_time ?? data.move} cylinders.</div>
+        `;
+
+    } catch (err) {
+        alert("Simulation Error: " + err.message);
+        document.getElementById("seek-time").innerText = "FAIL";
+        document.getElementById("seek-sequence").innerText = "Error tracking sequence.";
+    }
 }
 </script>
-
 {% endblock %}
