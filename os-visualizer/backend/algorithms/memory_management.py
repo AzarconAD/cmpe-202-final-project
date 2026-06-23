@@ -157,11 +157,50 @@ def best_available_fit(block_sizes, requests, min_fragment_size: int = 2):
     result['steps'] = step_history
     return result
 
+def worst_fit(block_sizes: List[int], requests: List[Dict]) -> Dict[str, Any]:
+    blocks = initialize_memory(block_sizes)
+    memory_requests = [MemoryRequest(**r) for r in requests]
+    step_history = []
+    
+    for req in memory_requests:
+        allocated = False
+        step = {
+            'request': req.process_id,
+            'size': req.size,
+            'action': 'allocated',
+            'block_id': None
+        }
+        
+        # Worst Fit: find the largest block that fits
+        worst_block = None
+        worst_fit_size = -1
+        
+        for block in blocks:
+            if not block.is_allocated and block.size >= req.size:
+                if block.size > worst_fit_size:
+                    worst_fit_size = block.size
+                    worst_block = block
+        
+        if worst_block is not None:
+            allocate_block(worst_block, req, blocks)
+            allocated = True
+            step['block_id'] = worst_block.id
+        
+        if not allocated:
+            step['action'] = 'waiting'
+        
+        step_history.append(step)
+    
+    result = build_memory_result('Worst Fit', blocks, memory_requests)
+    result['steps'] = step_history
+    return result
+
 # ============= Algorithm Router =============
 MEMORY_ALGORITHMS = {
     'first_fit': first_fit,
     'best_fit': best_fit,
     'best_available_fit': best_available_fit,
+    'worst_fit': worst_fit
 }
 
 def run_memory_algorithm(algorithm: str, block_sizes: List[int], requests: List[Dict]) -> Dict[str, Any]:
