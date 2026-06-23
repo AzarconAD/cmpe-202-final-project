@@ -6,14 +6,153 @@
 
     <h2>Page Replacement</h2>
 
-    <div class="panel">
-        <div class="input-box">
-            <h3>Input</h3>
+    <div class="simulator-workspace-grid">
+        
+        <div class="workspace-left-panel">
+            <div class="setup-card">
+                <label for="algo-select" class="field-lbl">Replacement Strategy</label>
+                <select id="algo-select" class="custom-select">
+                    <option value="fifo" selected>FIFO (First-In, First-Out)</option>
+                    <option value="optimal">Optimal (Clairvoyant Replacement)</option>
+                    <option value="lru">LRU (Least Recently Used)</option>
+                    <option value="lru_approx">LRU Approximation (Second Chance)</option>
+                    <option value="lfu">LFU (Least Frequently Used)</option>
+                </select>
+
+                <label for="frame-input" class="field-lbl">Physical Memory Frames</label>
+                <input type="number" id="frame-input" class="custom-field-input" value="3" min="1" max="7">
+                
+                <label for="stream-input" class="field-lbl">Page Reference String</label>
+                <input type="text" id="stream-input" class="custom-field-input" value="7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2">
+
+                <div class="execution-actions">
+                    <button id="trigger-sim-btn" class="action-success-btn">Execute Simulation</button>
+                </div>
+            </div>
+
+            <div id="metrics-panel" class="metrics-summary-sidebar" style="display: none;">
+                <div class="metric-counter-card">
+                    <span class="metric-label">Total Page Hits</span>
+                    <h3 id="stat-hits" class="metric-value color-hit">0</h3>
+                </div>
+                <div class="metric-counter-card">
+                    <span class="metric-label">Total Page Faults</span>
+                    <h3 id="stat-faults" class="metric-value color-fault">0</h3>
+                </div>
+                <div class="metric-counter-card">
+                    <span class="metric-label">Performance Hit Ratio</span>
+                    <h3 id="stat-ratio" class="metric-value color-ratio">0.0%</h3>
+                </div>
+            </div>
         </div>
 
-        <div class="output-box">
-            <h3>Output</h3>
+        <div id="matrix-panel" class="workspace-right-panel" style="display: none;">
+            <h3 class="visualization-title">Visualization Table</h3>
+            <div class="matrix-scroll-container">
+                <table id="simulation-matrix-table" class="unified-matrix-table">
+                    </table>
+            </div>
         </div>
+
     </div>
 </div>
+
+<script>
+    document.getElementById('trigger-sim-btn').addEventListener('click', async () => {
+        const algorithm = document.getElementById('algo-select').value;
+        const rawString = document.getElementById('stream-input').value;
+        const frames = document.getElementById('frame-input').value;
+
+        const reference_string = rawString.split(',')
+            .map(x => x.trim())
+            .filter(x => x !== "")
+            .map(x => parseInt(x, 10));
+
+        if (reference_string.length === 0 || reference_string.some(isNaN)) {
+            alert("Please enter a valid comma-separated sequence of numbers.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/simulate/page', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ algorithm, reference_string, frames })
+            });
+
+            if (!response.ok) throw new Error("Simulation endpoint error status.");
+            const data = await response.json();
+            
+            renderSimulationMatrix(data, parseInt(frames, 10));
+        } catch (err) {
+            alert("Failed to compute: " + err.message);
+        }
+    });
+
+    function renderSimulationMatrix(data, totalFrames) {
+        if (!data || !data.steps) return;
+
+        document.getElementById('stat-hits').innerText = data.hit ?? 0;
+        document.getElementById('stat-faults').innerText = data.fault ?? 0;
+        document.getElementById('stat-ratio').innerText = ((data.ratio_hit || 0) * 100).toFixed(1) + '%';
+
+        const matrixTable = document.getElementById('simulation-matrix-table');
+        matrixTable.innerHTML = "";
+
+        // 1. TOP INCOMING REQUESTS ROW (Uses transparent side label spacer instead of a shifting trick)
+        const incomingRow = document.createElement('tr');
+        incomingRow.innerHTML = `<td class="matrix-side-label cell-spacer-clear"></td>` + 
+            data.steps.map(step => {
+                const pageVal = (step.page !== undefined) ? step.page : (step._page !== undefined ? step._page : '');
+                return `<td class="matrix-cell-node incoming-header-cell">${pageVal}</td>`;
+            }).join('');
+        matrixTable.appendChild(incomingRow);
+
+        // 2. FRAME ROWS
+        for (let fIdx = 0; fIdx < totalFrames; fIdx++) {
+            const frameRow = document.createElement('tr');
+            let rowHTML = `<td class="matrix-side-label">Frame ${fIdx + 1}</td>`;
+            
+            data.steps.forEach((step) => {
+                let framesList = null;
+                if (Array.isArray(step.frames)) framesList = step.frames;
+                else if (Array.isArray(step._frames)) framesList = step._frames;
+                else if (step.frm && Array.isArray(step.frm)) framesList = step.frm;
+                else {
+                    for (let key in step) {
+                        if (Array.isArray(step[key])) {
+                            framesList = step[key];
+                            break;
+                        }
+                    }
+                }
+                
+                framesList = framesList || [];
+                const val = framesList[fIdx];
+                const displayVal = (val !== null && val !== undefined) ? val : '-';
+                
+                const stepPage = (step.page !== undefined) ? step.page : step._page;
+                const isHit = (step.hit !== undefined) ? step.hit : step._hit;
+
+                let highlightClass = "";
+                if (val === null || val === undefined || displayVal === '-') {
+                    highlightClass = "cell-empty";
+                } else if (isHit && val === stepPage) {
+                    highlightClass = "cell-hit-highlight";
+                } else if (!isHit && val === stepPage) {
+                    highlightClass = "cell-replaced-highlight";
+                }
+
+                rowHTML += `<td class="matrix-cell-node ${highlightClass}">${displayVal}</td>`;
+            });
+            
+            frameRow.innerHTML = rowHTML;
+            matrixTable.appendChild(frameRow);
+        }
+
+        // Display results panels side-by-side
+        document.getElementById('metrics-panel').style.display = 'flex';
+        document.getElementById('matrix-panel').style.display = 'block';
+    }
+</script>
 {% endblock %}
