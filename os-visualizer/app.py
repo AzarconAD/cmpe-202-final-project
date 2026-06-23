@@ -4,8 +4,6 @@ from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with yo
 from backend.algorithms.memory_management import run_memory_algorithm
 from backend.algorithms.page_replacement import run_page_algorithm  # Import the page replacement module
 
-# Optional: Uncomment when your disk backend is ready
-# from backend.algorithms.disk_scheduling import run_disk_algorithm 
 
 app = Flask(
     __name__,
