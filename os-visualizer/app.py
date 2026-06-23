@@ -27,13 +27,12 @@ def simulate_cpu():
     quantum = data.get("quantum", 4)
 
     try:
-        # Cast quantum safely in case it is sent as a string from the frontend
-        quantum_val = int(quantum) if quantum is not None else 4
-        
         if algorithm == "round_robin":
-            result = run_algorithm(algorithm, processes, quantum=quantum_val)
+            result = run_algorithm(algorithm, processes, quantum=quantum)
         elif algorithm == "mlq":
-            result = run_algorithm(algorithm, processes, quantum_system=quantum_val)
+            result = run_algorithm(algorithm, processes, quantum_system=quantum)
+        elif algorithm == "mlfq":
+            result = run_algorithm(algorithm, processes)
         else:
             result = run_algorithm(algorithm, processes)
         return jsonify(result)
@@ -111,4 +110,4 @@ def simulate_disk():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
