@@ -182,8 +182,8 @@ async function runDiskSimulation() {
         // Log to terminal window
         document.getElementById("disk-terminal").innerHTML = `
             <div class="terminal-row"><span style="color:#58a6ff;">[ALGO]:</span> Running ${ALGO_LABELS[algorithm] || algorithm.toUpperCase()} Operations</div>
-            <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${initial_head}</div>
-            <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${disk_size - 1}</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${headNum}</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${sizeNum - 1}</div>
             <div class="terminal-row status-line" style="color:#56d364;">Simulation computed instantly! Total Movement: ${data.total_seek_time ?? data.move} cylinders.</div>
         `;
 

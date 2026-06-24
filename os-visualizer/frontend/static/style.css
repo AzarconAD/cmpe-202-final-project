@@ -1032,3 +1032,67 @@ main {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================
+   DISK PAGE - TERMINAL CARD & METRIC LABELS
+   (classes used in disk.html, missing from CSS)
+   ========================================== */
+.terminal-card {
+  background-color: #05070a;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.terminal-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.terminal-body {
+  padding: 14px 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* macOS-style traffic light dots */
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.red    { background-color: #f85149; }
+.dot.yellow { background-color: #e3b341; }
+.dot.green  { background-color: #56d364; }
+
+/* Metric label / value inside metric-counter-card */
+.metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: block;
+}
