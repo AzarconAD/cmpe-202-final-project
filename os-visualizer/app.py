@@ -3,9 +3,7 @@ import os
 from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
 from backend.algorithms.memory_management import run_memory_algorithm
 from backend.algorithms.page_replacement import run_page_algorithm  # Import the page replacement module
-
-# Optional: Uncomment when your disk backend is ready
-# from backend.algorithms.disk_scheduling import run_disk_algorithm 
+from backend.algorithms.disk_scheduling import run_disk_algorithm
 
 app = Flask(
     __name__,
@@ -89,7 +87,7 @@ def simulate_page():
         
         result = run_page_algorithm(algorithm, safe_reference, frames_count)
 
-            # Translate backend field names into what page.html's JS expects
+        # Translate backend field names into what page.html's JS expects
         result["steps"] = [
             {
                 "page": s["pg"],
@@ -113,23 +111,23 @@ def simulate_disk():
     data = request.get_json() or {}
     algorithm = data.get("algorithm", "fcfs")
     request_queue = data.get("request_queue", [])
-    direction = data.get("direction", "left")
+    direction = data.get("direction", "right")
 
     try:
         initial_head = int(data.get("initial_head", 50))
         disk_size = int(data.get("disk_size", 200))
-        safe_queue = [int(q) for q in request_queue]
+        
+        # Cleanly stringify and filter queue inputs to protect against type cast failures
+        safe_queue = [int(q) for q in request_queue if str(q).strip().lstrip('-').isdigit()]
 
-        # Placeholder integration for your disk algorithm runner module
-        # result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
-        result = {
-            "status": "Disk simulation route verified successfully!",
-            "algorithm": algorithm,
-            "head": initial_head,
-            "size": disk_size,
-            "queue_length": len(safe_queue)
-        }
-        return jsonify(result)
+        # Compute results from your operational layer
+        raw_result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
+        
+        # Standardize properties to match exactly what your script fetches
+        return jsonify({
+            "total_seek_time": raw_result.get("move", raw_result.get("total_seek_time", 0)),
+            "seek_sequence": raw_result.get("order", raw_result.get("seek_sequence", []))
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
