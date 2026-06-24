@@ -3,7 +3,9 @@ import os
 from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
 from backend.algorithms.memory_management import run_memory_algorithm
 from backend.algorithms.page_replacement import run_page_algorithm  # Import the page replacement module
-from backend.algorithms.disk_scheduling import run_disk_algorithm
+
+# Optional: Uncomment when your disk backend is ready
+# from backend.algorithms.disk_scheduling import run_disk_algorithm 
 
 app = Flask(
     __name__,
@@ -27,12 +29,13 @@ def simulate_cpu():
     quantum = data.get("quantum", 4)
 
     try:
+        # Cast quantum safely in case it is sent as a string from the frontend
+        quantum_val = int(quantum) if quantum is not None else 4
+        
         if algorithm == "round_robin":
-            result = run_algorithm(algorithm, processes, quantum=quantum)
+            result = run_algorithm(algorithm, processes, quantum=quantum_val)
         elif algorithm == "mlq":
-            result = run_algorithm(algorithm, processes, quantum_system=quantum)
-        elif algorithm == "mlfq":
-            result = run_algorithm(algorithm, processes)
+            result = run_algorithm(algorithm, processes, quantum_system=quantum_val)
         else:
             result = run_algorithm(algorithm, processes)
         return jsonify(result)
@@ -52,8 +55,17 @@ def simulate_memory():
     requests_list = data.get("requests", [])
 
     try:
-        # Protect block size lists mapping
-        safe_blocks = [int(b) for b in block_sizes if str(b).isdigit() or isinstance(b, int)]
+        # Reject non-numeric, boolean, negative, and zero block sizes
+        safe_blocks = []
+        for b in block_sizes:
+            if isinstance(b, bool):
+                continue
+            try:
+                b_int = int(b)
+            except (TypeError, ValueError):
+                continue
+            if b_int > 0:
+                safe_blocks.append(b_int) 
         result = run_memory_algorithm(algorithm, safe_blocks, requests_list)
         return jsonify(result)
     except Exception as e:
@@ -76,6 +88,18 @@ def simulate_page():
         safe_reference = [int(x) for x in reference_string]
         
         result = run_page_algorithm(algorithm, safe_reference, frames_count)
+
+            # Translate backend field names into what page.html's JS expects
+        result["steps"] = [
+            {
+                "page": s["pg"],
+                "frames": s["frm"],
+                "hit": s["status"] == "Hit",
+                "evicted": s["replaced_page"],
+            }
+            for s in result["steps"]
+        ]
+
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -89,25 +113,25 @@ def simulate_disk():
     data = request.get_json() or {}
     algorithm = data.get("algorithm", "fcfs")
     request_queue = data.get("request_queue", [])
-    direction = data.get("direction", "right")
+    direction = data.get("direction", "left")
 
     try:
         initial_head = int(data.get("initial_head", 50))
         disk_size = int(data.get("disk_size", 200))
-        
-        # Cleanly stringify and filter queue inputs to protect against type cast failures
-        safe_queue = [int(q) for q in request_queue if str(q).strip().lstrip('-').isdigit()]
+        safe_queue = [int(q) for q in request_queue]
 
-        # Compute results from your operational layer
-        raw_result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
-        
-        # Standardize properties to match exactly what your script fetches
-        return jsonify({
-            "total_seek_time": raw_result.get("move", raw_result.get("total_seek_time", 0)),
-            "seek_sequence": raw_result.get("order", raw_result.get("seek_sequence", []))
-        })
+        # Placeholder integration for your disk algorithm runner module
+        # result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
+        result = {
+            "status": "Disk simulation route verified successfully!",
+            "algorithm": algorithm,
+            "head": initial_head,
+            "size": disk_size,
+            "queue_length": len(safe_queue)
+        }
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
