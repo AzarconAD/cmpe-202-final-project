@@ -103,7 +103,7 @@ main {
 .cards {
   display: grid;
   /* Automatically wraps cards into neat rows if window shrinks */
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
 }
 
@@ -160,9 +160,11 @@ main {
   background-color: var(--accent-blue);
   color: #0b0c10; /* Switches to deep dark text for high visibility contrast */
   box-shadow: 0 0 12px rgba(88, 166, 255, 0.3);
-}   
+}
 
-.back-btn {
+/* MERGED: .back-btn and .back-link-btn were near-identical */
+.back-btn,
+.back-link-btn {
   display: inline-block;
   color: var(--text-muted);
   text-decoration: none;
@@ -172,7 +174,8 @@ main {
   transition: color 0.2s ease;
 }
 
-.back-btn:hover {
+.back-btn:hover,
+.back-link-btn:hover {
   color: var(--accent-blue);
 }
 
@@ -245,11 +248,22 @@ main {
   border: 1px solid var(--accent-blue);
 }
 
-.dashboard-grid {
+/* SHARED: .dashboard-grid and .simulator-workspace-grid share the same column layout */
+.dashboard-grid,
+.simulator-workspace-grid {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 24px;
+}
+
+.dashboard-grid {
   margin-top: 20px;
+}
+
+.simulator-workspace-grid {
+  align-items: start;
+  margin-top: 24px;
+  width: 100%;
 }
 
 .panel {
@@ -272,13 +286,16 @@ main {
   margin-bottom: 15px;
 }
 
-.input-group input {
-  flex-grow: 1;
+/* MERGED: .input-group input and .entry-field-group input were near-identical */
+.input-group input,
+.entry-field-group input {
+  flex: 1;
   background-color: var(--bg-dark);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   color: var(--text-main);
   padding: 8px 12px;
+  outline: none;
 }
 
 .input-group button, .primary-btn {
@@ -321,11 +338,17 @@ main {
   border: 1px solid var(--border-color);
 }
 
-.queue-list li button {
+/* SHARED: transparent delete/remove button base style */
+.queue-list li button,
+.remove-pill-btn,
+.drop-job-btn {
   background: transparent;
   border: none;
-  color: #f85149;
   cursor: pointer;
+}
+
+.queue-list li button {
+  color: #f85149;
   font-size: 1.1rem;
 }
 
@@ -397,7 +420,7 @@ main {
 }
 
 .empty-block {
-  background-color: #161b22;
+  background-color: var(--card-bg);
   border-style: dashed;
   color: var(--text-muted);
 }
@@ -417,8 +440,6 @@ main {
   overflow-y: auto;
 }
 
-
-
 .log-entry { margin-bottom: 6px; font-size: 0.9rem; }
 .log-entry.allocated { color: #56d364; }
 .log-entry.waiting { color: #f85149; }
@@ -427,7 +448,10 @@ main {
 /* ==========================================
    8. CARD-BASED MEMORY ARCHITECTURE
    ========================================== */
-.unique-mem-layout {
+
+/* MERGED: .unique-mem-layout and .unique-page-layout were identical */
+.unique-mem-layout,
+.unique-page-layout {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
@@ -435,17 +459,6 @@ main {
 
 .nav-control-strip {
   margin-bottom: 20px;
-}
-
-.back-link-btn {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-}
-
-.back-link-btn:hover {
-  color: var(--accent-blue);
 }
 
 .content-heading h2 {
@@ -486,7 +499,9 @@ main {
   margin-bottom: 12px;
 }
 
-.custom-select {
+/* MERGED: .custom-select and .custom-field-input were identical */
+.custom-select,
+.custom-field-input {
   width: 100%;
   background-color: var(--bg-dark);
   border: 1px solid var(--border-color);
@@ -519,22 +534,12 @@ main {
   opacity: 0.9;
 }
 
-.execution-accent { background-color: var(--accent-blue); color: #0d1117; }
+.execution-accent { background-color: var(--accent-blue); color: var(--bg-dark); }
 .clear-accent { background: transparent; border: 1px solid var(--border-color); color: #f85149; }
 
 .entry-field-group {
   display: flex;
   gap: 6px;
-}
-
-.entry-field-group input {
-  flex: 1;
-  background-color: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-main);
-  padding: 8px 12px;
-  outline: none;
 }
 
 .append-btn {
@@ -573,10 +578,7 @@ main {
 }
 
 .remove-pill-btn {
-  background: transparent;
-  border: none;
   color: var(--text-muted);
-  cursor: pointer;
   font-size: 1rem;
   line-height: 1;
 }
@@ -605,10 +607,7 @@ main {
 }
 
 .drop-job-btn {
-  background: transparent;
-  border: none;
   color: #f85149;
-  cursor: pointer;
   font-size: 0.75rem;
 }
 
@@ -657,7 +656,7 @@ main {
   border-radius: 2px;
 }
 
-.indicator.unallocated { background-color: #161b22; border: 1px solid var(--border-color); }
+.indicator.unallocated { background-color: var(--card-bg); border: 1px solid var(--border-color); }
 .indicator.occupied { background-color: rgba(88, 166, 255, 0.15); border: 1px solid var(--accent-blue); }
 
 /* Hardware Strip Blueprint */
@@ -731,24 +730,6 @@ main {
    DISK VISUALIZATION LAYOUT
    ========================================== */
 
-.unique-page-layout {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.custom-field-input {
-  width: 100%;
-  background-color: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 0.9rem;
-  outline: none;
-  margin-bottom: 20px;
-}
-
 .full-span-card {
   grid-column: span 2;
 }
@@ -808,6 +789,7 @@ main {
   text-align: center;
 }
 
+/* SHARED: .metric-title and .field-lbl share the same uppercase label style */
 .metric-title {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -831,7 +813,7 @@ main {
   overflow-x: auto;
   border-radius: 6px;
   border: 1px solid var(--border-color);
-  background-color: #0d1117;
+  background-color: var(--bg-dark);
 }
 
 .matrix-table {
@@ -905,14 +887,6 @@ main {
 /* ==========================================
    Page replacement visualization
    ========================================== */
-.simulator-workspace-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-  align-items: start;
-  margin-top: 24px;
-  width: 100%;
-}
 
 .workspace-left-panel {
   display: flex;
@@ -928,8 +902,8 @@ main {
 }
 
 .metrics-summary-sidebar .metric-counter-card {
-  background-color: #161b22;
-  border: 1px solid #30363d;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 16px;
   display: flex;
@@ -945,7 +919,7 @@ main {
 /* Visualization Header Title */
 .visualization-title {
   font-size: 1.15rem;
-  color: #f0f6fc;
+  color: var(--text-main);
   margin: 0 0 12px 0;
   font-weight: 600;
 }
@@ -953,10 +927,10 @@ main {
 .matrix-scroll-container {
   width: 100%;
   overflow-x: auto;
-  background-color: #0d1117;
+  background-color: var(--bg-dark);
   padding: 24px 16px;
   border-radius: 6px;
-  border: 1px solid #30363d;
+  border: 1px solid var(--border-color);
 }
 
 .unified-matrix-table {
@@ -967,10 +941,10 @@ main {
 }
 
 .matrix-side-label {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-family);
   font-size: 0.9rem;
   font-weight: 600;
-  color: #8b949e !important;
+  color: var(--text-muted) !important;
   text-align: right;
   padding-right: 15px;
   white-space: nowrap;
@@ -991,12 +965,12 @@ main {
   font-size: 1.05rem;
   font-weight: bold;
   border-radius: 6px;
-  border: 1px solid #30363d !important;
-  background-color: #161b22 !important;
-  color: #f0f6fc !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--card-bg) !important;
+  color: var(--text-main) !important;
 }
 
-.unified-matrix-table td, 
+.unified-matrix-table td,
 .unified-matrix-table th {
   color: #ffffff !important;
   font-weight: 700 !important;
@@ -1005,8 +979,8 @@ main {
 
 .incoming-header-cell {
   background-color: #21262d !important;
-  border: 1px solid #58a6ff !important;
-  color: #58a6ff !important;
+  border: 1px solid var(--accent-blue) !important;
+  color: var(--accent-blue) !important;
 }
 
 .cell-empty {
@@ -1022,7 +996,7 @@ main {
 
 .cell-replaced-highlight {
   background-color: rgba(56, 166, 255, 0.25) !important;
-  border: 2px solid #58a6ff !important;
+  border: 2px solid var(--accent-blue) !important;
   color: #79c0ff !important;
 }
 
@@ -1048,13 +1022,13 @@ main {
   transform: scale(0.98);
 }
 
-.color-hit { color: #58a6ff !important; }
+/* MERGED: .color-hit and .color-ratio were identical */
+.color-hit,
+.color-ratio { color: var(--accent-blue) !important; }
 .color-fault { color: #ff7b72 !important; }
-.color-ratio { color: #58a6ff !important; }
 
 @media (max-width: 992px) {
   .simulator-workspace-grid {
     grid-template-columns: 1fr;
   }
-  
 }
