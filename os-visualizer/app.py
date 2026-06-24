@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 import os
-from backend.algorithms.cpu_scheduling import run_algorithm  # Interacts with your simulation routing module
-from backend.algorithms.memory_management import run_memory_algorithm
-from backend.algorithms.page_replacement import run_page_algorithm  # Import the page replacement module
-from backend.algorithms.disk_scheduling import run_disk_algorithm
+from backend.algorithms.cpu_scheduling import run_algorithm
+from backend.algorithms.memory_management import run_memory_algorithm, simulate_memory_scheduling
+from backend.algorithms.page_replacement import run_page_algorithm
+from backend.algorithms.disk_scheduling import run_disk_algorithm   # <-- NEW IMPORT
 
 app = Flask(
     __name__,
@@ -27,9 +27,8 @@ def simulate_cpu():
     quantum = data.get("quantum", 4)
 
     try:
-        # Cast quantum safely in case it is sent as a string from the frontend
         quantum_val = int(quantum) if quantum is not None else 4
-        
+
         if algorithm == "round_robin":
             result = run_algorithm(algorithm, processes, quantum=quantum_val)
         elif algorithm == "mlq":
@@ -47,13 +46,13 @@ def memory():
 @app.route("/simulate/memory", methods=["POST"])
 def simulate_memory():
     data = request.get_json() or {}
-    
+
     algorithm = data.get("algorithm", "first_fit")
     block_sizes = data.get("block_sizes", [])
     requests_list = data.get("requests", [])
+    time_param = data.get("time", None)
 
     try:
-        # Reject non-numeric, boolean, negative, and zero block sizes
         safe_blocks = []
         for b in block_sizes:
             if isinstance(b, bool):
@@ -63,8 +62,38 @@ def simulate_memory():
             except (TypeError, ValueError):
                 continue
             if b_int > 0:
-                safe_blocks.append(b_int) 
-        result = run_memory_algorithm(algorithm, safe_blocks, requests_list)
+                safe_blocks.append(b_int)
+        safe_time = int(time_param) if time_param is not None else None
+        result = run_memory_algorithm(algorithm, safe_blocks, requests_list, time=safe_time)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/simulate/memory_scheduling", methods=["POST"])
+def simulate_memory_scheduling_route():
+    data = request.get_json() or {}
+    processes = data.get("processes", [])
+    total_memory = data.get("total_memory", 60)
+    algorithm = data.get("algorithm", "first_fit")
+    compaction = data.get("compaction", False)
+
+    try:
+        total_memory = int(total_memory)
+        safe_processes = []
+        for p in processes:
+            try:
+                safe_processes.append({
+                    'pid': str(p['pid']),
+                    'arrival': int(p['arrival']),
+                    'burst': max(1, int(p['burst'])),
+                    'memory': max(1, int(p['memory'])),
+                })
+            except (KeyError, TypeError, ValueError):
+                continue
+
+        result = simulate_memory_scheduling(
+            safe_processes, total_memory, algorithm, bool(compaction)
+        )
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -76,18 +105,16 @@ def page_replacement():
 @app.route("/simulate/page", methods=["POST"])
 def simulate_page():
     data = request.get_json() or {}
-    
+
     algorithm = data.get("algorithm", "fifo")
     reference_string = data.get("reference_string", [])
-    
+
     try:
         frames_count = int(data.get("frames", 3))
-        # Ensure values in reference string are treated as integers
         safe_reference = [int(x) for x in reference_string]
-        
+
         result = run_page_algorithm(algorithm, safe_reference, frames_count)
 
-        # Translate backend field names into what page.html's JS expects
         result["steps"] = [
             {
                 "page": s["pg"],
@@ -111,25 +138,42 @@ def simulate_disk():
     data = request.get_json() or {}
     algorithm = data.get("algorithm", "fcfs")
     request_queue = data.get("request_queue", [])
-    direction = data.get("direction", "right")
+    direction = data.get("direction", "left")
 
     try:
         initial_head = int(data.get("initial_head", 50))
         disk_size = int(data.get("disk_size", 200))
-        
-        # Cleanly stringify and filter queue inputs to protect against type cast failures
-        safe_queue = [int(q) for q in request_queue if str(q).strip().lstrip('-').isdigit()]
 
-        # Compute results from your operational layer
-        raw_result = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
-        
-        # Standardize properties to match exactly what your script fetches
+        # Validate input
+        if disk_size <= 0:
+            raise ValueError("Disk size must be positive.")
+        if initial_head < 0 or initial_head >= disk_size:
+            raise ValueError(f"Head position must be between 0 and {disk_size - 1}.")
+
+        safe_queue = [int(q) for q in request_queue if str(q).strip() != ""]
+        if not safe_queue:
+            raise ValueError("Request queue cannot be empty.")
+
+        # Call the actual disk scheduling algorithm
+        result_dict = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
+
+        # Map fields to what the frontend expects
+        # run_disk_algorithm returns a dict with keys: 'order', 'move', 'avg', 'steps'
+        # We'll add 'total_seek_time' (alias for move) and 'seek_sequence' (alias for order)
+        # Also keep original keys for backward compatibility.
         return jsonify({
-            "total_seek_time": raw_result.get("move", raw_result.get("total_seek_time", 0)),
-            "seek_sequence": raw_result.get("order", raw_result.get("seek_sequence", []))
+            "order": result_dict.get("order", []),
+            "move": result_dict.get("move", 0),
+            "avg": result_dict.get("avg", 0.0),
+            "steps": result_dict.get("steps", []),
+            "total_seek_time": result_dict.get("move", 0),
+            "seek_sequence": result_dict.get("order", []),
         })
-    except Exception as e:
+
+    except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

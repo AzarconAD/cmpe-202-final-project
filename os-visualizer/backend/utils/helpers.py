@@ -101,9 +101,42 @@ def coalesce_free_blocks(blocks: List[MemoryBlock]):
     while i < len(blocks) - 1:
         current = blocks[i]
         nxt = blocks[i + 1]
-        if current.is_allocated and nxt.is_allocated and current.end == nxt.start:
+        if not current.is_allocated and not nxt.is_allocated and current.end == nxt.start:
             current.end = nxt.end
             current.size = current.end - current.start
             blocks.pop(i + 1)
         else:
             i += 1
+
+def find_first_fit(blocks, size):
+    for b in blocks:
+        if not b.is_allocated and b.size >= size:
+            return b
+    return None
+
+def find_next_fit(blocks, size, pointer):
+    n = len(blocks)
+    for i in range(n):
+        idx = (pointer + i) % n
+        b = blocks[idx]
+        if not b.is_allocated and b.size >= size:
+            return b, (idx + 1) % n
+    return None, pointer
+
+def find_best_fit(blocks, size):
+    best = None
+    best_size = float('inf')
+    for b in blocks:
+        if not b.is_allocated and b.size >= size and b.size < best_size:
+            best = b
+            best_size = b.size
+    return best
+
+def find_worst_fit(blocks, size):
+    worst = None
+    worst_size = -1
+    for b in blocks:
+        if not b.is_allocated and b.size >= size and b.size > worst_size:
+            worst = b
+            worst_size = b.size
+    return worst
