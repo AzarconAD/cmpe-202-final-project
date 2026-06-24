@@ -43,9 +43,9 @@
                         <tbody>
                             <tr class="proc-row">
                                 <td><input type="text" value="P1" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td><input type="number" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td><input type="number" value="5" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td class="priority-cell" style="display:none;"><input type="number" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" min="0" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" min="1" value="5" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="priority-cell" style="display:none;"><input type="number" min="1" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                                 <td class="queue-cell" style="display:none;">
                                     <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
                                         <option value="system">System</option>
@@ -55,9 +55,9 @@
                             </tr>
                             <tr class="proc-row">
                                 <td><input type="text" value="P2" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td><input type="number" value="1" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td><input type="number" value="3" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-                                <td class="priority-cell" style="display:none;"><input type="number" value="2" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" min="0" value="1" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td><input type="number" min="1" value="3" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                                <td class="priority-cell" style="display:none;"><input type="number" min="1" value="2" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                                 <td class="queue-cell" style="display:none;">
                                     <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
                                         <option value="system">System</option>
@@ -89,6 +89,28 @@
                     <p>Average Waiting Time: <strong id="avgWait" style="color: var(--accent-blue);">0</strong> ms</p>
                     <p>Average Turnaround Time: <strong id="avgTurn" style="color: var(--accent-blue);">0</strong> ms</p>
                 </div>
+
+                <div>
+                    <h4>Computation Breakdown</h4>
+                    <table id="breakdownTable" style="width:100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 10px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                                <th style="padding: 6px 8px;">PID</th>
+                                <th style="padding: 6px 8px;">Arrival</th>
+                                <th style="padding: 6px 8px;">Burst</th>
+                                <th style="padding: 6px 8px;">Finish</th>
+                                <th style="padding: 6px 8px; color: var(--accent-blue);" title="Turnaround = Finish - Arrival">TAT</th>
+                                <th style="padding: 6px 8px; color: var(--accent-blue);" title="Waiting = TAT - Burst">WT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdownBody"></tbody>
+                        <tfoot id="breakdownFoot"></tfoot>
+                    </table>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+                        <strong style="color: var(--text-main);">TAT</strong> (Turnaround Time) = Finish &minus; Arrival &nbsp;&nbsp;&nbsp;
+                        <strong style="color: var(--text-main);">WT</strong> (Waiting Time) = TAT &minus; Burst
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -118,9 +140,9 @@ document.getElementById('addBtn').addEventListener('click', function() {
     tr.className = 'proc-row';
     tr.innerHTML = `
         <td><input type="text" value="P${rowCount}" class="p-id" style="width:50px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-        <td><input type="number" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-        <td><input type="number" value="4" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
-        <td class="priority-cell" style="display:${isPriority ? 'table-cell' : 'none'};"><input type="number" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td><input type="number" min="0" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td><input type="number" min="1" value="4" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+        <td class="priority-cell" style="display:${isPriority ? 'table-cell' : 'none'};"><input type="number" min="1" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
         <td class="queue-cell" style="display:${isMlq ? 'table-cell' : 'none'};">
             <select class="p-queue" style="background:var(--bg-dark); color:#fff; border:1px solid var(--border-color);">
                 <option value="system">System</option>
@@ -231,6 +253,56 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             segmentWrapper.appendChild(timeLabelRow);
             chart.appendChild(segmentWrapper);
         });
+
+        // --- Computation Breakdown Table ---
+        // Derive each process's finish time from the last Gantt block it appears in
+        const finishMap = {};
+        data.gantt.forEach(block => {
+            if (!finishMap[block.pid] || block.end > finishMap[block.pid]) {
+                finishMap[block.pid] = block.end;
+            }
+        });
+
+        const breakdownBody = document.getElementById('breakdownBody');
+        const breakdownFoot = document.getElementById('breakdownFoot');
+        breakdownBody.innerHTML = '';
+        breakdownFoot.innerHTML = '';
+
+        let totalTAT = 0, totalWT = 0;
+        const n = processes.length;
+
+        processes.forEach(proc => {
+            const finish = finishMap[proc.pid] ?? '?';
+            const tat = (finish !== '?') ? finish - proc.arrival : '?';
+            const wt  = (tat  !== '?') ? tat  - proc.burst   : '?';
+            if (typeof tat === 'number') { totalTAT += tat; totalWT += wt; }
+
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border-color)';
+            tr.innerHTML = `
+                <td style="padding:6px 8px; font-weight:600;">${proc.pid}</td>
+                <td style="padding:6px 8px;">${proc.arrival}</td>
+                <td style="padding:6px 8px;">${proc.burst}</td>
+                <td style="padding:6px 8px;">${finish}</td>
+                <td style="padding:6px 8px;">${finish} - ${proc.arrival} = <strong style="color:var(--accent-blue);">${tat}</strong></td>
+                <td style="padding:6px 8px;">${tat} - ${proc.burst} = <strong style="color:var(--accent-blue);">${wt}</strong></td>
+            `;
+            breakdownBody.appendChild(tr);
+        });
+
+        // Footer: sum row + average row
+        breakdownFoot.innerHTML = `
+            <tr style="border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.82rem;">
+                <td colspan="4" style="padding:5px 8px;">Sum</td>
+                <td style="padding:5px 8px;"><strong style="color:var(--text-main);">${totalTAT}</strong></td>
+                <td style="padding:5px 8px;"><strong style="color:var(--text-main);">${totalWT}</strong></td>
+            </tr>
+            <tr style="border-top:2px solid var(--border-color); font-weight:600;">
+                <td colspan="4" style="padding:6px 8px; color:var(--text-muted);">Average (/ ${n})</td>
+                <td style="padding:6px 8px;">${totalTAT} / ${n} = <strong style="color:var(--accent-blue);">${(totalTAT/n).toFixed(2)}</strong></td>
+                <td style="padding:6px 8px;">${totalWT} / ${n} = <strong style="color:var(--accent-blue);">${(totalWT/n).toFixed(2)}</strong></td>
+            </tr>
+        `;
     });
 });
 </script>
