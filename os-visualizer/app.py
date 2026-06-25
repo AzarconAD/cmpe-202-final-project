@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 import os
 from backend.algorithms.cpu_scheduling import run_algorithm
-from backend.algorithms.memory_management import run_memory_algorithm, simulate_memory_scheduling
+from backend.algorithms.memory_management import run_memory_algorithm
+from backend.utils.helpers import simulate_memory_scheduling
 from backend.algorithms.page_replacement import run_page_algorithm
-from backend.algorithms.disk_scheduling import run_disk_algorithm   # <-- NEW IMPORT
+from backend.algorithms.disk_scheduling import run_disk_algorithm
 
 app = Flask(
     __name__,
@@ -46,11 +47,10 @@ def memory():
 @app.route("/simulate/memory", methods=["POST"])
 def simulate_memory():
     data = request.get_json() or {}
-
     algorithm = data.get("algorithm", "first_fit")
     block_sizes = data.get("block_sizes", [])
     requests_list = data.get("requests", [])
-    time_param = data.get("time", None)
+    compaction = data.get("compaction", False)
 
     try:
         safe_blocks = []
@@ -59,12 +59,11 @@ def simulate_memory():
                 continue
             try:
                 b_int = int(b)
+                if b_int > 0:
+                    safe_blocks.append(b_int)
             except (TypeError, ValueError):
                 continue
-            if b_int > 0:
-                safe_blocks.append(b_int)
-        safe_time = int(time_param) if time_param is not None else None
-        result = run_memory_algorithm(algorithm, safe_blocks, requests_list, time=safe_time)
+        result = run_memory_algorithm(algorithm, safe_blocks, requests_list, compaction=bool(compaction))
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -154,13 +153,8 @@ def simulate_disk():
         if not safe_queue:
             raise ValueError("Request queue cannot be empty.")
 
-        # Call the actual disk scheduling algorithm
         result_dict = run_disk_algorithm(algorithm, safe_queue, initial_head, disk_size, direction)
 
-        # Map fields to what the frontend expects
-        # run_disk_algorithm returns a dict with keys: 'order', 'move', 'avg', 'steps'
-        # We'll add 'total_seek_time' (alias for move) and 'seek_sequence' (alias for order)
-        # Also keep original keys for backward compatibility.
         return jsonify({
             "order": result_dict.get("order", []),
             "move": result_dict.get("move", 0),

@@ -172,10 +172,8 @@ async function runDiskSimulation() {
             throw new Error(data.error || "Disk microservice returned an invalid response code.");
         }
 
-        // Print details instantly to UI Elements
         document.getElementById("seek-time").innerText = data.total_seek_time ?? data.move ?? 0;
 
-        // Replaced .innerText with .innerHTML to cleanly compile HTML Entities
         const sequenceArr = data.seek_sequence || data.order || [];
         document.getElementById("seek-sequence").innerHTML = sequenceArr.length > 0 ? sequenceArr.join(" &rarr; ") : "-";
 

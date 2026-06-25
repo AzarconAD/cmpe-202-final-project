@@ -7,15 +7,67 @@
     </div>
 
     <div class="content-heading">
-        <h2>Memory Allocation with CPU Scheduling</h2>
-        <p class="subtitle">Simulate processes with arrival, burst, memory size – with compaction and allocation strategies.</p>
+        <h2>Memory Allocation Simulator</h2>
+        <p class="subtitle">Choose between fixed‑partition (static) and dynamic‑allocation (scheduling) modes.</p>
     </div>
 
-    <div class="setup-row">
-        <!-- Left: Configuration -->
+    <!-- Mode selector -->
+    <div class="setup-card" style="margin-bottom: 20px;">
+        <label class="field-lbl">Simulation Mode</label>
+        <div style="display: flex; gap: 24px; margin: 6px 0;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="mode" value="static" checked> MFT (Fixed Partitions)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="mode" value="dynamic"> MVT (Dynamic Allocation)
+            </label>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 1. STATIC MODE (Fixed Partitions)                            -->
+    <!-- ============================================================ -->
+    <div id="static-mode" class="setup-row">
+        <div class="setup-card">
+            <label for="algo-select-static" class="field-lbl">Allocation Strategy</label>
+            <select id="algo-select-static" class="custom-select">
+                <option value="first_fit">First Fit</option>
+                <option value="best_fit">Best Fit</option>
+                <option value="best_available_fit">Best Available Fit</option>
+            </select>
+
+            <div class="execution-actions">
+                <button id="trigger-static-btn" class="action-btn execution-accent">Run Static Allocation</button>
+                <button id="clear-static-btn" class="action-btn clear-accent">Clear All</button>
+            </div>
+        </div>
+
+        <div class="setup-card">
+            <label class="field-lbl">Configure Memory Partitions</label>
+            <div class="entry-field-group">
+                <input type="number" id="partition-input" placeholder="Block capacity (KB)" min="1">
+                <button id="push-partition-btn" class="append-btn">Add Block</button>
+            </div>
+            <div id="partition-badge-box" class="pill-matrix"></div>
+        </div>
+
+        <div class="setup-card">
+            <label class="field-lbl">Define Request Queue</label>
+            <div class="entry-field-group">
+                <input type="number" id="process-input" placeholder="Required Size (KB)" min="1">
+                <button id="push-process-btn" class="append-btn">Queue Job</button>
+            </div>
+            <ol id="process-queue-box" class="ordered-job-list"></ol>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 2. DYNAMIC MODE (Scheduling) – unchanged                     -->
+    <!-- ============================================================ -->
+    <div id="dynamic-mode" class="setup-row" style="display: none;">
         <div class="setup-card" style="grid-column: span 2;">
-            <label for="algo-select" class="field-lbl">Allocation Strategy</label>
-            <select id="algo-select" class="custom-select">
+            <label for="algo-select-dynamic" class="field-lbl">Allocation Strategy</label>
+            <select id="algo-select-dynamic" class="custom-select">
                 <option value="first_fit">First Fit</option>
                 <option value="next_fit">Next Fit</option>
                 <option value="best_fit">Best Fit</option>
@@ -35,12 +87,12 @@
             </div>
 
             <div class="execution-actions">
-                <button id="trigger-sim-btn" class="action-btn execution-accent">Run Simulation</button>
-                <button id="clear-sim-btn" class="action-btn clear-accent">Clear All</button>
+                <button id="trigger-dynamic-btn" class="action-btn execution-accent">Run Dynamic Simulation</button>
+                <button id="clear-dynamic-btn" class="action-btn clear-accent">Clear All</button>
             </div>
         </div>
 
-        <!-- Middle: Process Table -->
+        <!-- Process Table (same as before) -->
         <div class="setup-card" style="grid-column: span 2;">
             <label class="field-lbl">Processes (Arrival, Burst, Memory)</label>
             <table id="processTable" style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
@@ -81,10 +133,12 @@
         </div>
     </div>
 
-    <!-- Results Area -->
+    <!-- ============================================================ -->
+    <!-- 3. RESULTS AREA (shared) – unchanged                         -->
+    <!-- ============================================================ -->
     <div id="results-container" style="display: none; margin-top: 30px;">
         <!-- Summary metrics -->
-        <div id="metrics-summary-row" class="metrics-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div id="metrics-summary-row" class="metrics-grid memory-metrics-grid" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
             <div class="metric-card">
                 <span class="metric-title">Total Memory</span>
                 <h3 id="metric-total">0 KB</h3>
@@ -103,120 +157,268 @@
             </div>
         </div>
 
-        <!-- Memory Map Timeline -->
-        <div class="board-column" style="margin-bottom: 20px;">
-            <div class="board-header">
-                <h3>Memory Map Over Time</h3>
-                <div class="status-legend">
-                    <span class="indicator unallocated"></span> Free
-                    <span class="indicator occupied"></span> Allocated
+        <!-- Static results -->
+        <div id="static-results" style="display: block;">
+            <div class="display-board">
+                <div class="board-column visual-column">
+                    <div class="board-header">
+                        <h3>Physical Memory Map</h3>
+                        <div class="status-legend">
+                            <span class="indicator unallocated"></span> Free Space
+                            <span class="indicator occupied"></span> Process Map
+                        </div>
+                    </div>
+                    <div id="physical-memory-strip" class="hardware-canvas"></div>
+                    <div class="metric-footer">
+                        <span id="capacity-total">Aggregate Size: 0 KB</span>
+                    </div>
                 </div>
-            </div>
-            <!--
-                BUG FIX: replaced the old block-index table (which mis-labelled
-                blocks when compaction or splitting changed their count) with a
-                proportional bar per time-step that is keyed on address ranges,
-                not block array indices.
-            -->
-            <div id="memory-timeline" style="overflow-x: auto; background: var(--bg-dark); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <!-- filled by JS -->
+                <div class="board-column records-column">
+                    <div class="board-header">
+                        <h3>Step-by-Step Diagnostic Trace</h3>
+                    </div>
+                    <div id="trace-terminal" class="terminal-view">
+                        <div class="terminal-row placeholder-line">Waiting for initialization parameters...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Utilization Table -->
-        <div class="board-column">
-            <div class="board-header">
-                <h3>Memory Utilization per Second</h3>
+        <!-- Dynamic results -->
+        <div id="dynamic-results" style="display: none;">
+            <div class="board-column" style="margin-bottom: 20px;">
+                <div class="board-header">
+                    <h3>Memory Map Over Time</h3>
+                    <div class="status-legend">
+                        <span class="indicator unallocated"></span> Free
+                        <span class="indicator occupied"></span> Allocated
+                    </div>
+                </div>
+                <div id="memory-timeline" style="overflow-x: auto; background: var(--bg-dark); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
             </div>
-            <div style="max-height: 300px; overflow-y: auto; background: var(--bg-dark); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <table id="utilization-table" style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
-                            <th style="padding: 6px;">Time (s)</th>
-                            <th style="padding: 6px;">Used (KB)</th>
-                            <th style="padding: 6px;">Free (KB)</th>
-                            <th style="padding: 6px; text-align:left;">Utilization</th>
-                            <th style="padding: 6px;">Allocated</th>
-                            <th style="padding: 6px;">Finished</th>
-                        </tr>
-                    </thead>
-                    <tbody id="utilization-body"></tbody>
-                </table>
+            <div class="board-column">
+                <div class="board-header">
+                    <h3>Memory Utilization per Second</h3>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto; background: var(--bg-dark); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <table id="utilization-table" style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                                <th style="padding: 6px;">Time (s)</th>
+                                <th style="padding: 6px;">Used (KB)</th>
+                                <th style="padding: 6px;">Free (KB)</th>
+                                <th style="padding: 6px; text-align:left;">Utilization</th>
+                                <th style="padding: 6px;">Allocated</th>
+                                <th style="padding: 6px;">Finished</th>
+                            </tr>
+                        </thead>
+                        <tbody id="utilization-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    /* Colour palette for process bars – cycles through these */
-    .mem-bar-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 80px;
-    }
-    .mem-col {
-        display: inline-flex;
-        flex-direction: column;
-        vertical-align: top;
-        gap: 4px;
-    }
-    .mem-timeline-row {
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-    }
-    .mem-time-label {
-        min-width: 44px;
-        font-size: 0.7rem;
-        color: var(--text-muted);
-        padding-top: 2px;
-        flex-shrink: 0;
-    }
-    .mem-bar {
-        height: 28px;
-        display: flex;
-        border-radius: 3px;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.08);
-        width: 420px;
-        flex-shrink: 0;
-    }
-    .mem-segment {
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.65rem;
-        font-weight: 600;
-        overflow: hidden;
-        white-space: nowrap;
-        transition: opacity 0.1s;
-    }
-    .mem-segment:hover { opacity: 0.8; cursor: default; }
-    .mem-segment.free {
-        background: rgba(255,255,255,0.07);
-        color: var(--text-muted);
-    }
-    .mem-util-label {
-        font-size: 0.7rem;
-        color: var(--accent-blue);
-        padding-top: 6px;
-        min-width: 48px;
-        flex-shrink: 0;
-    }
-</style>
-
 <script>
-    /* ── palette for process segments ── */
+    // ================================================================
+    // 1. MODE TOGGLE
+    // ================================================================
+    const modeRadios = document.querySelectorAll('input[name="mode"]');
+    const staticModeDiv = document.getElementById('static-mode');
+    const dynamicModeDiv = document.getElementById('dynamic-mode');
+    const staticResults = document.getElementById('static-results');
+    const dynamicResults = document.getElementById('dynamic-results');
+    const resultsContainer = document.getElementById('results-container');
+
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'static') {
+                staticModeDiv.style.display = 'grid';
+                dynamicModeDiv.style.display = 'none';
+                staticResults.style.display = 'none';
+                dynamicResults.style.display = 'none';
+                resultsContainer.style.display = 'none';
+            } else {
+                staticModeDiv.style.display = 'none';
+                dynamicModeDiv.style.display = 'grid';
+                staticResults.style.display = 'none';
+                dynamicResults.style.display = 'none';
+                resultsContainer.style.display = 'none';
+            }
+        });
+    });
+    // Initialize: static visible, dynamic hidden
+    staticModeDiv.style.display = 'grid';
+    dynamicModeDiv.style.display = 'none';
+    staticResults.style.display = 'block';
+    dynamicResults.style.display = 'none';
+    document.querySelector('input[name="mode"][value="static"]').checked = true;
+
+    // ================================================================
+    // 2. STATIC MODE (Fixed partitions)
+    // ================================================================
+    let blockSizes = [100, 500, 200, 300, 600];
+    let allocationRequests = [
+        { process_id: 'P1', size: 212 },
+        { process_id: 'P2', size: 417 },
+        { process_id: 'P3', size: 112 },
+        { process_id: 'P4', size: 426 }
+    ];
+
+    function refreshPartitionUI() {
+        const target = document.getElementById('partition-badge-box');
+        let accumulatedSum = 0;
+        target.innerHTML = blockSizes.map((val, idx) => {
+            accumulatedSum += val;
+            return `
+                <span class="memory-pill">
+                    B${idx + 1}: ${val} KB
+                    <button class="remove-pill-btn" onclick="dropBlock(${idx})">&times;</button>
+                </span>
+            `;
+        }).join('');
+        document.getElementById('capacity-total').innerText = `Aggregate Size: ${accumulatedSum} KB`;
+        renderEmptyStateMemoryMap();
+    }
+
+    function refreshRequestQueueUI() {
+        const target = document.getElementById('process-queue-box');
+        target.innerHTML = allocationRequests.map((req, idx) => `
+            <li class="job-item">
+                <span><strong>${req.process_id}</strong> (${req.size} KB)</span>
+                <button class="drop-job-btn" onclick="dropRequest(${idx})">Delete</button>
+            </li>
+        `).join('');
+    }
+
+    function dropBlock(index) { blockSizes.splice(index, 1); refreshPartitionUI(); }
+    function dropRequest(index) { allocationRequests.splice(index, 1); refreshRequestQueueUI(); }
+
+    function renderEmptyStateMemoryMap() {
+        const target = document.getElementById('physical-memory-strip');
+        target.innerHTML = blockSizes.map(size => `
+            <div class="hardware-cell unassigned-cell" style="flex-grow: ${size}">
+                <span class="cell-capacity">${size} KB</span>
+                <span class="cell-occupant">Unallocated</span>
+            </div>
+        `).join('');
+    }
+    
+    refreshPartitionUI();
+    refreshRequestQueueUI();
+
+    document.getElementById('push-partition-btn').addEventListener('click', () => {
+        const field = document.getElementById('partition-input');
+        const cap = parseInt(field.value);
+        if (cap > 0) {
+            blockSizes.push(cap);
+            field.value = '';
+            refreshPartitionUI();
+        }
+    });
+
+    document.getElementById('push-process-btn').addEventListener('click', () => {
+        const field = document.getElementById('process-input');
+        const size = parseInt(field.value);
+        if (size > 0) {
+            allocationRequests.push({ process_id: `P${allocationRequests.length + 1}`, size: size });
+            field.value = '';
+            refreshRequestQueueUI();
+        }
+    });
+
+    document.getElementById('clear-static-btn').addEventListener('click', () => {
+        blockSizes = [];
+        allocationRequests = [];
+        refreshPartitionUI();
+        refreshRequestQueueUI();
+        document.getElementById('trace-terminal').innerHTML = '<div class="terminal-row status-line">[System State] Input values cleared.</div>';
+        resultsContainer.style.display = 'none';
+        document.getElementById('metrics-summary-row').style.display = 'none';
+    });
+
+    document.getElementById('trigger-static-btn').addEventListener('click', async () => {
+        if (!blockSizes.length || !allocationRequests.length) {
+            alert("Ensure both memory boundaries and size requests are fully populated.");
+            return;
+        }
+
+        const payload = {
+            algorithm: document.getElementById('algo-select-static').value,
+            block_sizes: blockSizes,
+            requests: allocationRequests
+        };
+
+        try {
+            const response = await fetch('/simulate/memory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                renderStaticOutput(data);
+            } else {
+                alert(data.error || "Simulation evaluation failed.");
+            }
+        } catch (error) {
+            console.error("Networking error:", error);
+        }
+    });
+
+    function renderStaticOutput(data) {
+        resultsContainer.style.display = 'block';
+        staticResults.style.display = 'block';
+        dynamicResults.style.display = 'none';
+
+        document.getElementById('metric-total').innerText = `${data.total_memory} KB`;
+        document.getElementById('metric-used').innerText = `${data.used_memory} KB`;
+        document.getElementById('metric-free').innerText = `${data.free_memory} KB`;
+        document.getElementById('metric-utilization').innerText = `${data.memory_utilization.toFixed(1)}%`;
+        document.getElementById('metrics-summary-row').style.display = 'grid'; document.getElementById('metrics-summary-row').style.gridTemplateColumns = 'repeat(4, 1fr)';
+
+        const canvas = document.getElementById('physical-memory-strip');
+        canvas.innerHTML = data.blocks.map(b => {
+            if (b.is_allocated) {
+                return `
+                    <div class="hardware-cell assigned-cell" style="flex-grow: ${b.size}">
+                        <span class="cell-capacity">${b.size} KB</span>
+                        <span class="cell-occupant">${b.process_id}</span>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="hardware-cell unassigned-cell" style="flex-grow: ${b.size}">
+                        <span class="cell-capacity">${b.size} KB</span>
+                        <span class="cell-occupant">Free</span>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        const consoleLog = document.getElementById('trace-terminal');
+        consoleLog.innerHTML = '';
+        data.steps.forEach(st => {
+            const outputRow = document.createElement('div');
+            outputRow.className = `terminal-row tracking-${st.action}`;
+            if (st.action === 'allocated') {
+                outputRow.innerHTML = `🏁 <b>${st.request}</b> allocated successfully into Block Segment ID <u>${st.block_id}</u> (${st.size} KB).`;
+            } else {
+                outputRow.innerHTML = `⚠️ <b>${st.request}</b> with size ${st.size} KB failed allocation -> placed in waiting register.`;
+            }
+            consoleLog.appendChild(outputRow);
+        });
+    }
+
+    // ================================================================
+    // 3. DYNAMIC MODE (scheduling) – unchanged from previous version
+    // ================================================================
     const PROC_COLORS = [
-        'rgba(88,166,255,0.55)',  // blue
-        'rgba(86,211,100,0.55)',  // green
-        'rgba(255,184,77,0.55)', // amber
-        'rgba(240,100,100,0.55)',// red
-        'rgba(180,100,240,0.55)',// purple
-        'rgba(64,220,220,0.55)', // teal
-        'rgba(255,130,200,0.55)',// pink
+        'rgba(88,166,255,0.55)', 'rgba(86,211,100,0.55)',
+        'rgba(255,184,77,0.55)', 'rgba(240,100,100,0.55)',
+        'rgba(180,100,240,0.55)', 'rgba(64,220,220,0.55)',
+        'rgba(255,130,200,0.55)'
     ];
     const pidColorMap = {};
     let colorIdx = 0;
@@ -228,7 +430,6 @@
         return pidColorMap[pid];
     }
 
-    /* ── Add row ── */
     document.getElementById('addBtn').addEventListener('click', function () {
         const tbody = document.querySelector('#processTable tbody');
         const rowCount = tbody.rows.length + 1;
@@ -244,34 +445,28 @@
         tbody.appendChild(tr);
     });
 
-    /* ── Delete row (event delegation) ── */
     document.querySelector('#processTable tbody').addEventListener('click', function (e) {
         if (e.target.classList.contains('del-row-btn')) {
             const tbody = document.querySelector('#processTable tbody');
-            // Keep at least one row
             if (tbody.rows.length > 1) {
                 e.target.closest('tr').remove();
             }
         }
     });
 
-    /* ── Clear button ── */
-    document.getElementById('clear-sim-btn').addEventListener('click', function () {
-        document.getElementById('results-container').style.display = 'none';
-        // Reset metric cards so stale numbers don't linger
+    document.getElementById('clear-dynamic-btn').addEventListener('click', function () {
+        resultsContainer.style.display = 'none';
         document.getElementById('metric-total').innerText = '0 KB';
         document.getElementById('metric-used').innerText = '0 KB';
         document.getElementById('metric-free').innerText = '0 KB';
         document.getElementById('metric-utilization').innerText = '0.0%';
         document.getElementById('memory-timeline').innerHTML = '';
         document.getElementById('utilization-body').innerHTML = '';
-        // Reset colour assignments for a fresh run
         Object.keys(pidColorMap).forEach(k => delete pidColorMap[k]);
         colorIdx = 0;
     });
 
-    /* ── Run simulation ── */
-    document.getElementById('trigger-sim-btn').addEventListener('click', async function () {
+    document.getElementById('trigger-dynamic-btn').addEventListener('click', async function () {
         const rows = document.querySelectorAll('.proc-row');
         const processes = Array.from(rows).map(row => ({
             pid: row.querySelector('.p-id').value.trim() || 'P?',
@@ -281,7 +476,7 @@
         }));
 
         const total_memory = parseInt(document.getElementById('total-memory').value) || 60;
-        const algorithm = document.getElementById('algo-select').value;
+        const algorithm = document.getElementById('algo-select-dynamic').value;
         const compaction = document.getElementById('compaction-toggle').checked;
 
         const payload = { processes, total_memory, algorithm, compaction };
@@ -293,9 +488,8 @@
                 body: JSON.stringify(payload),
             });
             const data = await response.json();
-
             if (response.ok) {
-                renderResults(data);
+                renderDynamicOutput(data);
             } else {
                 alert(data.error || 'Simulation failed.');
             }
@@ -304,17 +498,17 @@
         }
     });
 
-    /* ── Render results ── */
-    function renderResults(data) {
+    function renderDynamicOutput(data) {
         const timeline = data.timeline;
         if (!timeline || timeline.length === 0) {
             alert('No timeline data returned.');
             return;
         }
 
-        document.getElementById('results-container').style.display = 'block';
+        resultsContainer.style.display = 'block';
+        staticResults.style.display = 'none';
+        dynamicResults.style.display = 'block';
 
-        // Summary metrics (final state)
         const last = timeline[timeline.length - 1];
         const total = data.total_memory;
         const used = last.blocks.reduce((s, b) => s + (b.is_allocated ? b.size : 0), 0);
@@ -323,19 +517,11 @@
         document.getElementById('metric-used').innerText = used + ' KB';
         document.getElementById('metric-free').innerText = free + ' KB';
         document.getElementById('metric-utilization').innerText = last.utilization.toFixed(1) + '%';
+        document.getElementById('metrics-summary-row').style.display = 'grid'; document.getElementById('metrics-summary-row').style.gridTemplateColumns = 'repeat(4, 1fr)';
 
-        /* ── Memory map: proportional address bars ──
-         *
-         * BUG FIX: old code indexed blocks by array position, so after
-         * compaction or splitting the rows showed the wrong process.
-         * New approach renders each timestep as a horizontal bar where
-         * each segment's width is proportional to its *address size* in
-         * the total memory space — order and identity are always correct.
-         */
         const timelineDiv = document.getElementById('memory-timeline');
         timelineDiv.innerHTML = '';
 
-        // Legend header
         const legend = document.createElement('div');
         legend.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:0.75rem;';
         const allPids = [...new Set(
@@ -353,13 +539,11 @@
             const row = document.createElement('div');
             row.className = 'mem-timeline-row';
 
-            // Time label
             const tLabel = document.createElement('div');
             tLabel.className = 'mem-time-label';
             tLabel.textContent = `t = ${entry.time}`;
             row.appendChild(tLabel);
 
-            // Proportional bar
             const bar = document.createElement('div');
             bar.className = 'mem-bar';
             bar.title = `t=${entry.time} | util=${entry.utilization}%`;
@@ -381,15 +565,13 @@
             });
             row.appendChild(bar);
 
-            // Util label
             const uLabel = document.createElement('div');
             uLabel.className = 'mem-util-label';
             uLabel.textContent = entry.utilization + '%';
             row.appendChild(uLabel);
 
-            // Running / events label
             const evLabel = document.createElement('div');
-            evLabel.style.cssText = 'font-size:0.65rem;color:var(--text-muted);padding-top:6px;min-width:120px;';
+            evLabel.className = 'mem-event-label';
             const parts = [];
             if (entry.allocated && entry.allocated.length)  parts.push('▶ ' + entry.allocated.join(', '));
             if (entry.finished && entry.finished.length)    parts.push('✓ ' + entry.finished.join(', '));
@@ -400,12 +582,11 @@
             timelineDiv.appendChild(row);
         });
 
-        // Utilization table
         const tbody = document.getElementById('utilization-body');
         tbody.innerHTML = '';
         timeline.forEach(entry => {
-            const usedKB  = entry.blocks.reduce((s, b) => s + (b.is_allocated ? b.size : 0), 0);
-            const freeKB  = entry.blocks.reduce((s, b) => s + (b.is_allocated ? 0 : b.size), 0);
+            const usedKB = entry.blocks.reduce((s, b) => s + (b.is_allocated ? b.size : 0), 0);
+            const freeKB = entry.blocks.reduce((s, b) => s + (b.is_allocated ? 0 : b.size), 0);
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid var(--border-color)';
             tr.innerHTML = `

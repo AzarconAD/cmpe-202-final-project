@@ -1,13 +1,13 @@
 /* ==========================================
-   1. GLOBAL SYSTEM VARIABLES & RESET
+        GLOBAL SYSTEM VARIABLES & RESET
    ========================================== */
 :root {
-  --bg-dark: #0d1117;       /* Dark premium background */
-  --card-bg: #161b22;       /* Slate color for headers and cards */
-  --accent-blue: #58a6ff;   /* Clean electric blue for links & buttons */
-  --text-main: #f0f6fc;     /* Primary readable off-white text */
-  --text-muted: #8b949e;    /* Cool grey for descriptions/inactive links */
-  --border-color: #30363d;  /* Clean thin borders to separate elements */
+  --bg-dark: #0d1117;
+  --card-bg: #161b22;
+  --accent-blue: #58a6ff;
+  --text-main: #f0f6fc;
+  --text-muted: #8b949e;
+  --border-color: #30363d;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
@@ -24,7 +24,7 @@ body {
 }
 
 /* ==========================================
-   2. NAVBAR STYLING (From base.html)
+               NAVBAR STYLING
    ========================================== */
 nav {
   display: flex;
@@ -59,7 +59,6 @@ nav h1 {
   color: var(--accent-blue);
 }
 
-/* Responsive adjustment for small screens */
 @media (max-width: 768px) {
   nav {
     flex-direction: column;
@@ -75,7 +74,7 @@ nav h1 {
 }
 
 /* ==========================================
-   3. CONTENT CONTAINER Layout
+          CONTENT CONTAINER Layout
    ========================================== */
 main {
   width: 100%;
@@ -98,11 +97,10 @@ main {
 }
 
 /* ==========================================
-   4. DASHBOARD CARDS GRID
+             DASHBOARD CARDS GRID
    ========================================== */
 .cards {
   display: grid;
-  /* Automatically wraps cards into neat rows if window shrinks */
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
 }
@@ -114,12 +112,11 @@ main {
   padding: 28px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Ensures buttons stick nicely to the bottom */
+  justify-content: space-between;
   min-height: 180px;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Hover pop & glow animations */
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--accent-blue);
@@ -140,7 +137,7 @@ main {
 }
 
 /* ==========================================
-   5. BUTTON LINK STYLING
+             BUTTON LINK STYLING
    ========================================== */
 .card a {
   display: inline-block;
@@ -158,11 +155,10 @@ main {
 
 .card a:hover {
   background-color: var(--accent-blue);
-  color: #0b0c10; /* Switches to deep dark text for high visibility contrast */
+  color: #0b0c10;
   box-shadow: 0 0 12px rgba(88, 166, 255, 0.3);
 }
 
-/* MERGED: .back-btn and .back-link-btn were near-identical */
 .back-btn,
 .back-link-btn {
   display: inline-block;
@@ -180,7 +176,7 @@ main {
 }
 
 /* ==========================================
-   7. INFO SECTIONS (Description & About Us)
+     INFO SECTIONS (Description & About Us)
    ========================================== */
 .info-section {
   margin-top: 50px;
@@ -213,7 +209,7 @@ main {
 }
 
 /* ==========================================
-   8. MEMORY MANAGEMENT LAYOUT & COMPONENTS
+     MEMORY MANAGEMENT LAYOUT & COMPONENTS
    ========================================== */
 .memory-header {
   display: flex;
@@ -248,7 +244,6 @@ main {
   border: 1px solid var(--accent-blue);
 }
 
-/* SHARED: .dashboard-grid and .simulator-workspace-grid share the same column layout */
 .dashboard-grid,
 .simulator-workspace-grid {
   display: grid;
@@ -286,7 +281,6 @@ main {
   margin-bottom: 15px;
 }
 
-/* MERGED: .input-group input and .entry-field-group input were near-identical */
 .input-group input,
 .entry-field-group input {
   flex: 1;
@@ -338,7 +332,6 @@ main {
   border: 1px solid var(--border-color);
 }
 
-/* SHARED: transparent delete/remove button base style */
 .queue-list li button,
 .remove-pill-btn,
 .drop-job-btn {
@@ -446,10 +439,9 @@ main {
 .log-entry.system-msg { color: var(--text-muted); }
 
 /* ==========================================
-   8. CARD-BASED MEMORY ARCHITECTURE
+         CARD-BASED MEMORY ARCHITECTURE
    ========================================== */
 
-/* MERGED: .unique-mem-layout and .unique-page-layout were identical */
 .unique-mem-layout,
 .unique-page-layout {
   padding: 20px;
@@ -473,7 +465,6 @@ main {
   font-size: 0.95rem;
 }
 
-/* Three Columns Config Deck */
 .setup-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -499,7 +490,6 @@ main {
   margin-bottom: 12px;
 }
 
-/* MERGED: .custom-select and .custom-field-input were identical */
 .custom-select,
 .custom-field-input {
   width: 100%;
@@ -556,7 +546,6 @@ main {
   background-color: #38414a;
 }
 
-/* Pill Matrix Layout */
 .pill-matrix {
   display: flex;
   flex-wrap: wrap;
@@ -585,7 +574,6 @@ main {
 
 .remove-pill-btn:hover { color: #f85149; }
 
-/* Ordered Queue List Layout */
 .ordered-job-list {
   margin: 15px 0 0 0;
   padding: 0;
@@ -611,7 +599,6 @@ main {
   font-size: 0.75rem;
 }
 
-/* Split Visual Displays */
 .display-board {
   display: grid;
   grid-template-columns: 3fr 2fr;
@@ -703,7 +690,6 @@ main {
   color: var(--text-muted);
 }
 
-/* Console System Interface */
 .terminal-view {
   background-color: #05070a;
   border-radius: 8px;
@@ -727,7 +713,7 @@ main {
 .tracking-waiting { color: #f85149; }
 
 /* ==========================================
-   DISK VISUALIZATION LAYOUT
+           DISK VISUALIZATION LAYOUT
    ========================================== */
 
 .full-span-card {
@@ -773,7 +759,6 @@ main {
   font-style: italic;
 }
 
-/* Operational Performance Scoreboard Cards */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -789,7 +774,6 @@ main {
   text-align: center;
 }
 
-/* SHARED: .metric-title and .field-lbl share the same uppercase label style */
 .metric-title {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -807,7 +791,6 @@ main {
 .fault-card { border-top: 3px solid #f85149; }
 .ratio-card { border-top: 3px solid var(--accent-blue); }
 
-/* Execution Trace Grid Matrix Data Tables */
 .table-scroll-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -857,7 +840,6 @@ main {
   color: var(--text-main);
 }
 
-/* Algorithmic Condition Visual Cell Flags */
 .fresh-load-cell {
   background-color: rgba(56, 139, 253, 0.15);
   border: 1px solid var(--accent-blue);
@@ -884,8 +866,66 @@ main {
   color: #f85149;
 }
 
+.terminal-card {
+  background-color: #05070a;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.terminal-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.terminal-body {
+  padding: 14px 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.red    { background-color: #f85149; }
+.dot.yellow { background-color: #e3b341; }
+.dot.green  { background-color: #56d364; }
+
+.metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: block;
+}
+
 /* ==========================================
-   Page replacement visualization
+         Page replacement visualization
    ========================================== */
 
 .workspace-left-panel {
@@ -916,7 +956,6 @@ main {
   overflow: hidden;
 }
 
-/* Visualization Header Title */
 .visualization-title {
   font-size: 1.15rem;
   color: var(--text-main);
@@ -951,7 +990,6 @@ main {
   min-width: 90px;
 }
 
-/* Clear definitions to strip borders/backgrounds entirely from the top row left spacer */
 .cell-spacer-clear {
   border: none !important;
   background: transparent !important;
@@ -1000,7 +1038,6 @@ main {
   color: #79c0ff !important;
 }
 
-/* Premium Success Green Button Action Styling */
 .action-success-btn {
   width: 100%;
   padding: 12px;
@@ -1034,65 +1071,61 @@ main {
 }
 
 /* ==========================================
-   DISK PAGE - TERMINAL CARD & METRIC LABELS
-   (classes used in disk.html, missing from CSS)
+      MEMORY PAGE - TIMELINE VISUALIZATION
    ========================================== */
-.terminal-card {
-  background-color: #05070a;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.mem-timeline-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+.mem-time-label {
+    min-width: 44px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+.mem-bar {
+    height: 28px;
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    width: 420px;
+    flex-shrink: 0;
+}
+.mem-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.1s;
+}
+.mem-segment:hover { opacity: 0.8; cursor: default; }
+.mem-segment.free {
+    background: rgba(255,255,255,0.07);
+    color: var(--text-muted);
+}
+.mem-util-label {
+    font-size: 0.7rem;
+    color: var(--accent-blue);
+    padding-top: 6px;
+    min-width: 48px;
+    flex-shrink: 0;
+}
+.mem-event-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    padding-top: 6px;
+    min-width: 120px;
+    flex-shrink: 0;
 }
 
-.terminal-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background-color: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.terminal-title {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-left: 6px;
-}
-
-.terminal-body {
-  padding: 14px 16px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.85rem;
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* macOS-style traffic light dots */
-.dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.dot.red    { background-color: #f85149; }
-.dot.yellow { background-color: #e3b341; }
-.dot.green  { background-color: #56d364; }
-
-/* Metric label / value inside metric-counter-card */
-.metric-label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.4px;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.metric-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  display: block;
+.memory-metrics-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
 }

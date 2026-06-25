@@ -136,7 +136,7 @@ class CSCANDiskScheduling(DiskSchedulingAlgorithm):
                     move += d
                     steps.append(self._step(cur, r, move))
                     order.append(r)
-                    cur = r  # FIX: cur must advance each step, not stay at 0
+                    cur = r
         else:
             dn_desc = sorted((r for r in self.req if r < cur), reverse=True)
             up_desc = sorted((r for r in self.req if r >= cur), reverse=True)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Tuple
 from backend.models.process import Process, MemoryBlock, MemoryRequest
 
 def calculate_metrics(processes: List[Process]):
@@ -140,3 +140,157 @@ def find_worst_fit(blocks, size):
             worst = b
             worst_size = b.size
     return worst
+
+def compact_memory(blocks: List[MemoryBlock]) -> List[MemoryBlock]:
+    """Move all allocated blocks to the start, merge free space at the end."""
+    allocated_blocks = [b for b in blocks if b.is_allocated]
+    total_size = sum(b.size for b in blocks)
+    compacted = []
+    cursor = 0
+    for b in allocated_blocks:
+        b.start = cursor
+        b.end = cursor + b.size
+        cursor += b.size
+        compacted.append(b)
+    leftover = total_size - cursor
+    if leftover > 0:
+        next_id = max((b.id for b in blocks), default=-1) + 1
+        free_block_obj = MemoryBlock(
+            id=next_id,
+            start=cursor,
+            end=cursor + leftover,
+            size=leftover,
+            is_allocated=False,
+            process_id=None
+        )
+        compacted.append(free_block_obj)
+    blocks[:] = compacted
+    return blocks
+
+def find_first_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
+    for b in blocks:
+        if not b.is_allocated and b.size >= size:
+            return b
+    return None
+
+def find_next_fit(blocks: List[MemoryBlock], size: int, pointer: int) -> Tuple[Optional[MemoryBlock], int]:
+    n = len(blocks)
+    for i in range(n):
+        idx = (pointer + i) % n
+        b = blocks[idx]
+        if not b.is_allocated and b.size >= size:
+            return b, (idx + 1) % n
+    return None, pointer
+
+def find_best_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
+    best = None
+    best_size = float('inf')
+    for b in blocks:
+        if not b.is_allocated and b.size >= size and b.size < best_size:
+            best = b
+            best_size = b.size
+    return best
+
+def find_worst_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
+    worst = None
+    worst_size = -1
+    for b in blocks:
+        if not b.is_allocated and b.size >= size and b.size > worst_size:
+            worst = b
+            worst_size = b.size
+    return worst
+
+def allocate_with_algorithm(blocks: List[MemoryBlock], size: int, algorithm: str, pointer: int = 0) -> Tuple[Optional[MemoryBlock], int]:
+    if algorithm == 'first_fit':
+        return find_first_fit(blocks, size), pointer
+    elif algorithm == 'next_fit':
+        return find_next_fit(blocks, size, pointer)
+    elif algorithm == 'best_fit':
+        return find_best_fit(blocks, size), pointer
+    elif algorithm == 'worst_fit':
+        return find_worst_fit(blocks, size), pointer
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
+    
+def release_process(blocks: List[MemoryBlock], process_id: str) -> List[MemoryBlock]:
+    matching = [b for b in blocks if b.is_allocated and b.process_id == process_id]
+    for b in matching:
+        free_block(b, blocks)
+    return blocks
+
+def calculate_utilization_at_time(blocks: List[MemoryBlock], time: int) -> Dict[str, Any]:
+    total = sum(b.size for b in blocks)
+    used = sum(b.size for b in blocks if b.is_allocated)
+    free = total - used
+    utilization = (used / total * 100) if total else 0.0
+    return {
+        'time': time,
+        'total_memory': total,
+        'used_memory': used,
+        'free_memory': free,
+        'utilization_percent': round(utilization, 2)
+    }
+
+def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorithm: str, compaction: bool = False) -> Dict[str, Any]:
+    blocks = [MemoryBlock(id=0, start=0, end=total_memory, size=total_memory, is_allocated=False, process_id=None)]
+    procs = sorted(processes, key=lambda p: p['arrival'])
+    ready_queue = []
+    in_memory = {}
+    timeline = []
+    t = 0
+    idx = 0
+    n = len(procs)
+    pointer = 0
+
+    while idx < n or ready_queue or any(in_memory.values()):
+        while idx < n and procs[idx]['arrival'] <= t:
+            ready_queue.append(procs[idx])
+            idx += 1
+
+        if compaction and ready_queue:
+            blocks = compact_memory(blocks)
+
+        allocated_this_tick = []
+        new_ready = []
+        for proc in ready_queue:
+            size = proc['memory']
+            block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
+            if block is not None:
+                req = MemoryRequest(proc['pid'], size)
+                allocate_block(block, req, blocks)
+                in_memory[proc['pid']] = proc['burst']
+                allocated_this_tick.append(proc['pid'])
+                pointer = new_pointer
+            else:
+                new_ready.append(proc)
+        ready_queue = new_ready
+
+        # Execute one time unit
+        finished = []
+        for pid in list(in_memory.keys()):
+            in_memory[pid] -= 1
+            if in_memory[pid] == 0:
+                release_process(blocks, pid)
+                finished.append(pid)
+                del in_memory[pid]
+
+        total = sum(b.size for b in blocks)
+        used = sum(b.size for b in blocks if b.is_allocated)
+        util = (used / total * 100) if total else 0.0
+        timeline.append({
+            'time': t,
+            'blocks': [b.to_dict() for b in blocks],
+            'utilization': round(util, 2),
+            'allocated': allocated_this_tick,
+            'finished': finished,
+            'waiting': [p['pid'] for p in ready_queue]
+        })
+        t += 1
+
+    return {
+        'algorithm': algorithm,
+        'compaction': compaction,
+        'timeline': timeline,
+        'total_memory': total_memory,
+        'final_blocks': [b.to_dict() for b in blocks]
+    }

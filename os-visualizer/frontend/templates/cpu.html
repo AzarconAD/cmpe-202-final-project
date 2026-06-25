@@ -117,7 +117,6 @@
 </div>
 
 <script>
-// Toggles time quantum field and extra columns depending on algorithm selection
 document.getElementById('algoSelect').addEventListener('change', function() {
     const val = this.value;
     document.getElementById('quantumContainer').style.display = (val === 'round_robin' || val === 'mlq') ? 'block' : 'none';
@@ -129,7 +128,6 @@ document.getElementById('algoSelect').addEventListener('change', function() {
     document.querySelectorAll('.queue-head, .queue-cell').forEach(el => el.style.display = isMlq ? 'table-cell' : 'none');
 });
 
-// Appends additional rows dynamically into the process scheduling table
 document.getElementById('addBtn').addEventListener('click', function() {
     const tbody = document.querySelector('#processTable tbody');
     const rowCount = tbody.rows.length + 1;
@@ -153,7 +151,6 @@ document.getElementById('addBtn').addEventListener('click', function() {
     tbody.appendChild(tr);
 });
 
-// Handles async payload submittal and visual chart reconstruction
 document.getElementById('simulatorForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -188,8 +185,6 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
         
         const chart = document.getElementById('ganttChart');
         chart.innerHTML = '';
-        
-        // Setup parent tracking layout attributes
         chart.style.display = 'flex';
         chart.style.flexDirection = 'row';
         chart.style.height = 'auto';
@@ -201,8 +196,6 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
         
         data.gantt.forEach((block, index) => {
             const widthPct = ((block.end - block.start) / totalDuration) * 100;
-            
-            // Outer block container wrapping block + absolute positioned timestamps
             const segmentWrapper = document.createElement('div');
             segmentWrapper.style.width = `${widthPct}%`;
             segmentWrapper.style.display = 'flex';
@@ -232,30 +225,26 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             timeLabelRow.style.fontSize = '10px';
             timeLabelRow.style.color = 'var(--text-muted)';
             
-            // Render the global starting timestamp '0' ONLY under the first element block
             if (index === 0) {
                 const startStr = document.createElement('span');
                 startStr.innerText = block.start;
                 startStr.style.position = 'absolute';
                 startStr.style.left = '0';
-                startStr.style.transform = 'translateX(-50%)'; // Center '0' accurately below left-most edge
+                startStr.style.transform = 'translateX(-50%)';
                 timeLabelRow.appendChild(startStr);
             }
             
-            // Render block endpoints centered directly underneath cell splitting lines
             const endStr = document.createElement('span');
             endStr.innerText = block.end;
             endStr.style.position = 'absolute';
             endStr.style.right = '0';
-            endStr.style.transform = 'translateX(50%)'; // Center perfectly over the block boundary line
+            endStr.style.transform = 'translateX(50%)';
             
             timeLabelRow.appendChild(endStr);
             segmentWrapper.appendChild(timeLabelRow);
             chart.appendChild(segmentWrapper);
         });
 
-        // --- Computation Breakdown Table ---
-        // Derive each process's finish time from the last Gantt block it appears in
         const finishMap = {};
         data.gantt.forEach(block => {
             if (!finishMap[block.pid] || block.end > finishMap[block.pid]) {
@@ -290,7 +279,6 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             breakdownBody.appendChild(tr);
         });
 
-        // Footer: sum row + average row
         breakdownFoot.innerHTML = `
             <tr style="border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.82rem;">
                 <td colspan="4" style="padding:5px 8px;">Sum</td>
