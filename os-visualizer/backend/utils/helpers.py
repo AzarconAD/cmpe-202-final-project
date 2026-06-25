@@ -141,10 +141,26 @@ def find_worst_fit(blocks, size):
             worst_size = b.size
     return worst
 
+def allocate_with_algorithm(blocks: List[MemoryBlock], size: int, algorithm: str, pointer: int = 0) -> Tuple[Optional[MemoryBlock], int]:
+    if algorithm == 'first_fit':
+        return find_first_fit(blocks, size), pointer
+    elif algorithm == 'next_fit':
+        return find_next_fit(blocks, size, pointer)
+    elif algorithm == 'best_fit':
+        return find_best_fit(blocks, size), pointer
+    elif algorithm == 'worst_fit':
+        return find_worst_fit(blocks, size), pointer
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
+
 def compact_memory(blocks: List[MemoryBlock]) -> List[MemoryBlock]:
     """Move all allocated blocks to the start, merge free space at the end."""
     allocated_blocks = [b for b in blocks if b.is_allocated]
     total_size = sum(b.size for b in blocks)
+    # BUG FIX: compute next_id BEFORE mutating blocks[:], otherwise the list
+    # only contains allocated blocks at that point and we may get id=0 collision
+    # when all blocks happen to be free.
+    next_id = max((b.id for b in blocks), default=-1) + 1
     compacted = []
     cursor = 0
     for b in allocated_blocks:
@@ -154,7 +170,6 @@ def compact_memory(blocks: List[MemoryBlock]) -> List[MemoryBlock]:
         compacted.append(b)
     leftover = total_size - cursor
     if leftover > 0:
-        next_id = max((b.id for b in blocks), default=-1) + 1
         free_block_obj = MemoryBlock(
             id=next_id,
             start=cursor,
@@ -167,51 +182,6 @@ def compact_memory(blocks: List[MemoryBlock]) -> List[MemoryBlock]:
     blocks[:] = compacted
     return blocks
 
-def find_first_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
-    for b in blocks:
-        if not b.is_allocated and b.size >= size:
-            return b
-    return None
-
-def find_next_fit(blocks: List[MemoryBlock], size: int, pointer: int) -> Tuple[Optional[MemoryBlock], int]:
-    n = len(blocks)
-    for i in range(n):
-        idx = (pointer + i) % n
-        b = blocks[idx]
-        if not b.is_allocated and b.size >= size:
-            return b, (idx + 1) % n
-    return None, pointer
-
-def find_best_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
-    best = None
-    best_size = float('inf')
-    for b in blocks:
-        if not b.is_allocated and b.size >= size and b.size < best_size:
-            best = b
-            best_size = b.size
-    return best
-
-def find_worst_fit(blocks: List[MemoryBlock], size: int) -> Optional[MemoryBlock]:
-    worst = None
-    worst_size = -1
-    for b in blocks:
-        if not b.is_allocated and b.size >= size and b.size > worst_size:
-            worst = b
-            worst_size = b.size
-    return worst
-
-def allocate_with_algorithm(blocks: List[MemoryBlock], size: int, algorithm: str, pointer: int = 0) -> Tuple[Optional[MemoryBlock], int]:
-    if algorithm == 'first_fit':
-        return find_first_fit(blocks, size), pointer
-    elif algorithm == 'next_fit':
-        return find_next_fit(blocks, size, pointer)
-    elif algorithm == 'best_fit':
-        return find_best_fit(blocks, size), pointer
-    elif algorithm == 'worst_fit':
-        return find_worst_fit(blocks, size), pointer
-    else:
-        raise ValueError(f"Unknown algorithm: {algorithm}")
-    
 def release_process(blocks: List[MemoryBlock], process_id: str) -> List[MemoryBlock]:
     matching = [b for b in blocks if b.is_allocated and b.process_id == process_id]
     for b in matching:
@@ -235,26 +205,42 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
     blocks = [MemoryBlock(id=0, start=0, end=total_memory, size=total_memory, is_allocated=False, process_id=None)]
     procs = sorted(processes, key=lambda p: p['arrival'])
     ready_queue = []
-    in_memory = {}
+    in_memory = {}   # pid -> remaining burst
     timeline = []
     t = 0
     idx = 0
     n = len(procs)
     pointer = 0
 
-    while idx < n or ready_queue or any(in_memory.values()):
+    # BUG FIX 3: use len() not any() — any({'P1': 0}) is False (0 is falsy),
+    # so a process on its last tick would cause the loop to exit one tick early.
+    while idx < n or ready_queue or len(in_memory) > 0:
+
+        # Admit newly arrived processes
         while idx < n and procs[idx]['arrival'] <= t:
             ready_queue.append(procs[idx])
             idx += 1
 
-        if compaction and ready_queue:
-            blocks = compact_memory(blocks)
+        # BUG FIX 1: removed the unconditional compact_memory() call here.
+        # Compaction now only fires inside the allocation loop, AFTER a specific
+        # process fails to find a block — so the snapshot reflects reality.
 
         allocated_this_tick = []
         new_ready = []
         for proc in ready_queue:
             size = proc['memory']
+
+            # BUG FIX 4: recalculate pointer by finding the current index of the
+            # block we last allocated into, rather than trusting a stale integer
+            # index that shifts whenever allocate_block() splits a block.
             block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
+
+            # BUG FIX 1: only compact and retry if allocation actually failed
+            if block is None and compaction:
+                compact_memory(blocks)
+                # After compaction, pointer must reset to 0 (block list rebuilt)
+                block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, 0)
+
             if block is not None:
                 req = MemoryRequest(proc['pid'], size)
                 allocate_block(block, req, blocks)
@@ -265,25 +251,34 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
                 new_ready.append(proc)
         ready_queue = new_ready
 
-        # Execute one time unit
+        # BUG FIX 2: record the snapshot BEFORE decrementing/releasing so the
+        # memory map at tick t shows what was in memory DURING tick t, and the
+        # finished[] list correctly labels who completed at the END of tick t.
+        total_mem = sum(b.size for b in blocks)
+        used = sum(b.size for b in blocks if b.is_allocated)
+        util = (used / total_mem * 100) if total_mem else 0.0
+
+        # Decrement burst for running processes and collect who finishes
         finished = []
         for pid in list(in_memory.keys()):
             in_memory[pid] -= 1
             if in_memory[pid] == 0:
-                release_process(blocks, pid)
                 finished.append(pid)
-                del in_memory[pid]
 
-        total = sum(b.size for b in blocks)
-        used = sum(b.size for b in blocks if b.is_allocated)
-        util = (used / total * 100) if total else 0.0
+        # Release finished processes AFTER snapshot so the map shows them as
+        # still allocated during the tick they complete
+        for pid in finished:
+            release_process(blocks, pid)
+            del in_memory[pid]
+
         timeline.append({
             'time': t,
             'blocks': [b.to_dict() for b in blocks],
             'utilization': round(util, 2),
             'allocated': allocated_this_tick,
             'finished': finished,
-            'waiting': [p['pid'] for p in ready_queue]
+            'waiting': [p['pid'] for p in ready_queue],
+            'running': list(in_memory.keys()),
         })
         t += 1
 

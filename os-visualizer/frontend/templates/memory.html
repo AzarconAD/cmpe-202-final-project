@@ -29,11 +29,11 @@
     <!-- ============================================================ -->
     <div id="static-mode" class="setup-row">
         <div class="setup-card">
-            <label for="algo-select-static" class="field-lbl">Allocation Strategy</label>
+            <label for="algo-select-static" class="field-lbl">Allocation Strategy (Single Input Queue)</label>
             <select id="algo-select-static" class="custom-select">
                 <option value="first_fit">First Fit</option>
                 <option value="best_fit">Best Fit</option>
-                <option value="best_available_fit">Best Available Fit</option>
+                <option value="worst_fit">Worst Fit</option>
             </select>
 
             <div class="execution-actions">
@@ -513,12 +513,7 @@
         const total = data.total_memory;
         const used = last.blocks.reduce((s, b) => s + (b.is_allocated ? b.size : 0), 0);
         const free = total - used;
-        document.getElementById('metric-total').innerText = total + ' KB';
-        document.getElementById('metric-used').innerText = used + ' KB';
-        document.getElementById('metric-free').innerText = free + ' KB';
-        document.getElementById('metric-utilization').innerText = last.utilization.toFixed(1) + '%';
-        document.getElementById('metrics-summary-row').style.display = 'grid'; document.getElementById('metrics-summary-row').style.gridTemplateColumns = 'repeat(4, 1fr)';
-
+        
         const timelineDiv = document.getElementById('memory-timeline');
         timelineDiv.innerHTML = '';
 

@@ -17,7 +17,7 @@ def first_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = F
         if compaction:
             blocks = compact_memory(blocks)
 
-        allocated = False
+        allocated = False 
         step = {
             'request': req.process_id,
             'size': req.size,
