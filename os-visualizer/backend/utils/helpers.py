@@ -157,11 +157,9 @@ def compact_memory(blocks: List[MemoryBlock]) -> List[MemoryBlock]:
     """Move all allocated blocks to the start, merge free space at the end."""
     allocated_blocks = [b for b in blocks if b.is_allocated]
     total_size = sum(b.size for b in blocks)
-    # BUG FIX: compute next_id BEFORE mutating blocks[:], otherwise the list
-    # only contains allocated blocks at that point and we may get id=0 collision
-    # when all blocks happen to be free.
+    # compute next id before mutating list
     next_id = max((b.id for b in blocks), default=-1) + 1
-    compacted = []
+    compacted: List[MemoryBlock] = []
     cursor = 0
     for b in allocated_blocks:
         b.start = cursor
@@ -216,26 +214,37 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
     # so a process on its last tick would cause the loop to exit one tick early.
     while idx < n or ready_queue or len(in_memory) > 0:
 
+        # Decrement burst for running processes and collect who finishes
+        finished = []
+        for pid in list(in_memory.keys()):
+            in_memory[pid] -= 1
+            if in_memory[pid] == 0:
+                finished.append(pid)
+
+        # Release finished processes BEFORE admitting new arrivals so freed
+        # memory is available to waiting processes during the same tick.
+        for pid in finished:
+            release_process(blocks, pid)
+            del in_memory[pid]
+
+        # If compaction is enabled, compact immediately after frees so the
+        # memory map reflects defragmentation for the same tick.
+        if compaction:
+            compact_memory(blocks)
+            pointer = 0
+
         # Admit newly arrived processes
         while idx < n and procs[idx]['arrival'] <= t:
             ready_queue.append(procs[idx])
             idx += 1
 
-        # BUG FIX 1: removed the unconditional compact_memory() call here.
-        # Compaction now only fires inside the allocation loop, AFTER a specific
-        # process fails to find a block — so the snapshot reflects reality.
-
+        # Attempt allocations for ready processes (compaction only on failure)
         allocated_this_tick = []
         new_ready = []
         for proc in ready_queue:
             size = proc['memory']
-
-            # BUG FIX 4: recalculate pointer by finding the current index of the
-            # block we last allocated into, rather than trusting a stale integer
-            # index that shifts whenever allocate_block() splits a block.
             block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
 
-            # BUG FIX 1: only compact and retry if allocation actually failed
             if block is None and compaction:
                 compact_memory(blocks)
                 # After compaction, pointer must reset to 0 (block list rebuilt)
@@ -251,25 +260,11 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
                 new_ready.append(proc)
         ready_queue = new_ready
 
-        # BUG FIX 2: record the snapshot BEFORE decrementing/releasing so the
-        # memory map at tick t shows what was in memory DURING tick t, and the
-        # finished[] list correctly labels who completed at the END of tick t.
+        # Record snapshot AFTER allocation/release so the timeline reflects the
+        # memory state used for the upcoming tick.
         total_mem = sum(b.size for b in blocks)
         used = sum(b.size for b in blocks if b.is_allocated)
         util = (used / total_mem * 100) if total_mem else 0.0
-
-        # Decrement burst for running processes and collect who finishes
-        finished = []
-        for pid in list(in_memory.keys()):
-            in_memory[pid] -= 1
-            if in_memory[pid] == 0:
-                finished.append(pid)
-
-        # Release finished processes AFTER snapshot so the map shows them as
-        # still allocated during the tick they complete
-        for pid in finished:
-            release_process(blocks, pid)
-            del in_memory[pid]
 
         timeline.append({
             'time': t,
