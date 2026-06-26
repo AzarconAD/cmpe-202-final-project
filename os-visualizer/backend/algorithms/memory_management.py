@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any
 from backend.models.process import MemoryRequest, MemoryBlock
 from backend.utils.helpers import (
     initialize_memory,
@@ -7,17 +7,18 @@ from backend.utils.helpers import (
     build_memory_result
 )
 
-# ============= FIRST FIT =============
 def first_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = False) -> Dict[str, Any]:
+    # Set up the memory blocks (all free initially).
     blocks = initialize_memory(block_sizes)
     memory_requests = [MemoryRequest(**r) for r in requests]
     step_history = []
 
     for req in memory_requests:
+        # If compaction is enabled, compact memory before every allocation.
         if compaction:
             blocks = compact_memory(blocks)
 
-        allocated = False 
+        allocated = False
         step = {
             'request': req.process_id,
             'size': req.size,
@@ -25,6 +26,7 @@ def first_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = F
             'block_id': None
         }
 
+        # Scan from the beginning and pick the first block that fits.
         for block in blocks:
             if not block.is_allocated and block.size >= req.size:
                 allocate_block(block, req, blocks)
@@ -41,12 +43,12 @@ def first_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = F
     result['steps'] = step_history
     return result
 
-# ============= NEXT FIT =============
+
 def next_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = False) -> Dict[str, Any]:
     blocks = initialize_memory(block_sizes)
     memory_requests = [MemoryRequest(**r) for r in requests]
     step_history = []
-    pointer = 0
+    pointer = 0  # where to start searching next time
 
     for req in memory_requests:
         if compaction:
@@ -62,6 +64,7 @@ def next_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = Fa
 
         n = len(blocks)
         if n > 0:
+            # Start from `pointer` and wrap around if needed.
             for offset in range(n):
                 idx = (pointer + offset) % n
                 block = blocks[idx]
@@ -69,6 +72,7 @@ def next_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = Fa
                     allocate_block(block, req, blocks)
                     allocated = True
                     step['block_id'] = block.id
+                    # Update pointer to the block after the allocated one.
                     pointer = (idx + 1) % len(blocks)
                     break
 
@@ -81,7 +85,7 @@ def next_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = Fa
     result['steps'] = step_history
     return result
 
-# ============= BEST FIT =============
+
 def best_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = False) -> Dict[str, Any]:
     blocks = initialize_memory(block_sizes)
     memory_requests = [MemoryRequest(**r) for r in requests]
@@ -101,6 +105,7 @@ def best_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = Fa
 
         best_block = None
         best_fit_size = float('inf')
+        # Find the block that leaves the smallest leftover space.
         for block in blocks:
             if not block.is_allocated and block.size >= req.size:
                 if block.size < best_fit_size:
@@ -121,7 +126,7 @@ def best_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = Fa
     result['steps'] = step_history
     return result
 
-# ============= WORST FIT =============
+
 def worst_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = False) -> Dict[str, Any]:
     blocks = initialize_memory(block_sizes)
     memory_requests = [MemoryRequest(**r) for r in requests]
@@ -141,6 +146,7 @@ def worst_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = F
 
         worst_block = None
         worst_fit_size = -1
+        # Pick the block with the largest size (leaves the biggest leftover).
         for block in blocks:
             if not block.is_allocated and block.size >= req.size:
                 if block.size > worst_fit_size:
@@ -161,7 +167,7 @@ def worst_fit(block_sizes: List[int], requests: List[Dict], compaction: bool = F
     result['steps'] = step_history
     return result
 
-# ============= BEST AVAILABLE FIT =============
+
 def best_available_fit(block_sizes: List[int], requests: List[Dict], min_fragment_size: int = 2, compaction: bool = False) -> Dict[str, Any]:
     blocks = initialize_memory(block_sizes)
     memory_requests = [MemoryRequest(**r) for r in requests]
@@ -180,6 +186,7 @@ def best_available_fit(block_sizes: List[int], requests: List[Dict], min_fragmen
             'block_id': None
         }
 
+        # Find all free blocks that can hold the request.
         fitting_blocks = []
         for block in blocks:
             if not block.is_allocated and block.size >= req.size:
@@ -187,9 +194,11 @@ def best_available_fit(block_sizes: List[int], requests: List[Dict], min_fragmen
                 fitting_blocks.append({'block': block, 'remaining': remaining})
 
         if fitting_blocks:
+            # Sort by remaining space (best fit first).
             fitting_blocks.sort(key=lambda x: x['remaining'])
             chosen = fitting_blocks[0]
 
+            # If the tightest fit leaves a fragment too small, try the next block.
             if chosen['remaining'] < min_fragment_size and len(fitting_blocks) > 1:
                 for candidate in fitting_blocks[1:]:
                     if candidate['remaining'] >= min_fragment_size:
@@ -210,7 +219,8 @@ def best_available_fit(block_sizes: List[int], requests: List[Dict], min_fragmen
     result['steps'] = step_history
     return result
 
-# ============= ALGORITHM ROUTER =============
+
+# ============= Algorithm Router =============
 MEMORY_ALGORITHMS = {
     'first_fit': first_fit,
     'next_fit': next_fit,

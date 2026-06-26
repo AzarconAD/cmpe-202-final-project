@@ -3,8 +3,12 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 from backend.utils.validators import valid_int, valid_request_queue, valid_direction, valid_reference
 
+# ============================================================
+# CPU Scheduling: Process dataclass
+# ============================================================
 @dataclass
 class Process:
+    """Represents a process for CPU scheduling."""
     pid: str
     arrival: int
     burst: int
@@ -14,12 +18,13 @@ class Process:
     finish_time: Optional[int] = None
     waiting_time: Optional[int] = None
     turnaround_time: Optional[int] = None
-    queue: Optional[str] = None
+    queue: Optional[str] = None          # 'system' or 'user' for MLQ
     memory_required: Optional[int] = None
     memory_start: Optional[int] = None
     memory_end: Optional[int] = None
 
     def to_dict(self):
+        """Convert the process object to a dictionary (JSON‑friendly)."""
         return {
             'pid': self.pid,
             'arrival': self.arrival,
@@ -37,9 +42,12 @@ class Process:
         }
 
 
+# ============================================================
+# Memory Management: Block and Request dataclasses
+# ============================================================
 @dataclass
 class MemoryBlock:
-    """Represents a memory block/hole"""
+    """A contiguous chunk of memory – can be free or allocated to a process."""
     id: int
     start: int
     end: int
@@ -56,23 +64,26 @@ class MemoryBlock:
             'is_allocated': self.is_allocated,
             'process_id': self.process_id
         }
-    
+
+
 @dataclass
 class MemoryRequest:
-    """Represents a process requesting memory"""
+    """A request from a process to allocate a certain amount of memory."""
     process_id: str
     size: int
     allocated_block: Optional[int] = None
     allocated_time: Optional[int] = None
 
 
+# ============================================================
+# Page Replacement: Step and Result dataclasses + Abstract Base
+# ============================================================
 @dataclass
 class PageStep:
-    """One reference-string step in a page replacement trace."""
-
+    """One step in a page replacement trace: which page, frame contents, hit/fault."""
     pg: int
     frm: List[int]
-    status: str  # "Hit" or "Fault"
+    status: str          # "Hit" or "Fault"
     replaced_page: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -86,8 +97,7 @@ class PageStep:
 
 @dataclass
 class PageResult:
-    """Full result of running a page replacement algorithm."""
-
+    """Final result of a page replacement algorithm."""
     hit: int
     fault: int
     ratio_hit: float
@@ -104,27 +114,24 @@ class PageResult:
             "final_frm": self.final_frm,
             "steps": [s.to_dict() for s in self.steps],
         }
-    
+
+
 class PageReplacementAlgorithm(ABC):
-    """Abstract base class for page replacement algorithms."""
+    """Base class for all page replacement algorithms (FIFO, LRU, etc.)."""
 
     def __init__(self, ref: Sequence[int], frm: int) -> None:
+        # Validate the reference string and the number of frames.
         self.ref = valid_reference(ref)
         self.frm = valid_int(frm, "frm", 1)
 
     @abstractmethod
     def run(self) -> PageResult:
-        """Run the simulation and return a result dataclass."""
+        """Run the simulation – must be implemented by each subclass."""
+        pass
 
-    def _step(
-        self,
-        pg: int,
-        frames: Sequence[int | None],
-        hit: bool,
-        replaced_page: int | None = None,
-    ) -> PageStep:
-        """Build a single simulation step."""
-
+    def _step(self, pg: int, frames: Sequence[int | None], hit: bool,
+              replaced_page: int | None = None) -> PageStep:
+        """Build one step of the trace (called inside run())."""
         return PageStep(
             pg=pg,
             frm=[x for x in frames if x is not None],
@@ -132,15 +139,9 @@ class PageReplacementAlgorithm(ABC):
             replaced_page=replaced_page,
         )
 
-    def _res(
-        self,
-        hit: int,
-        fault: int,
-        frames: Sequence[int | None],
-        steps: List[PageStep],
-    ) -> PageResult:
-        """Build the shared result dataclass."""
-
+    def _res(self, hit: int, fault: int, frames: Sequence[int | None],
+             steps: List[PageStep]) -> PageResult:
+        """Build the final result (called at the end of run())."""
         tot = hit + fault
         return PageResult(
             hit=hit,
@@ -150,11 +151,14 @@ class PageReplacementAlgorithm(ABC):
             final_frm=[x for x in frames if x is not None],
             steps=steps,
         )
-    
+
+
+# ============================================================
+# Disk Scheduling: Step and Result dataclasses + Abstract Base
+# ============================================================
 @dataclass
 class DiskStep:
-    """One head-movement step in a disk scheduling trace."""
-
+    """One head movement step in a disk scheduling trace."""
     from_: int
     to: int
     dist: int
@@ -171,8 +175,7 @@ class DiskStep:
 
 @dataclass
 class DiskResult:
-    """Full result of running a disk scheduling algorithm."""
-
+    """Final result of a disk scheduling algorithm."""
     order: List[int]
     move: int
     avg: float
@@ -185,11 +188,13 @@ class DiskResult:
             "avg": self.avg,
             "steps": [s.to_dict() for s in self.steps],
         }
-    
+
+
 class DiskSchedulingAlgorithm(ABC):
-    """Abstract base class for disk scheduling algorithms."""
+    """Base class for disk scheduling algorithms (FCFS, SSTF, etc.)."""
 
     def __init__(self, req: Sequence[int], head: int, size: int, dir: str) -> None:
+        # Validate inputs.
         self.req = valid_request_queue(req)
         self.head = valid_int(head, "head", 0)
         self.size = valid_int(size, "size", 1)
@@ -204,16 +209,15 @@ class DiskSchedulingAlgorithm(ABC):
 
     @abstractmethod
     def run(self) -> DiskResult:
-        """Run the simulation and return a result dataclass."""
+        """Run the simulation – must be implemented by each subclass."""
+        pass
 
     def _step(self, a: int, b: int, c: int) -> DiskStep:
-        """Build one movement step."""
-
+        """Build one movement step (called inside run())."""
         return DiskStep(from_=a, to=b, dist=abs(b - a), cum_move=c)
 
     def _res(self, order: List[int], move: int, steps: List[DiskStep]) -> DiskResult:
-        """Build the shared result dataclass."""
-
+        """Build the final result (called at the end of run())."""
         return DiskResult(
             order=order,
             move=move,
