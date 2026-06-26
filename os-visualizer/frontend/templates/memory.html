@@ -214,7 +214,7 @@
 
 <script>
     // ================================================================
-    // 1. MODE TOGGLE
+    // 1. MODE TOGGLE (MFT vs MVT)
     // ================================================================
     const modeRadios = document.querySelectorAll('input[name="mode"]');
     const staticModeDiv = document.getElementById('static-mode');
@@ -223,6 +223,7 @@
     const dynamicResults = document.getElementById('dynamic-results');
     const resultsContainer = document.getElementById('results-container');
 
+    // When the user switches between MFT and MVT, show/hide the appropriate configuration panels.
     modeRadios.forEach(radio => {
         radio.addEventListener('change', function() {
             if (this.value === 'static') {
@@ -240,7 +241,7 @@
             }
         });
     });
-    // Initialize: static visible, dynamic hidden
+    // Initial state: show MFT (static) and hide MVT (dynamic).
     staticModeDiv.style.display = 'grid';
     dynamicModeDiv.style.display = 'none';
     staticResults.style.display = 'block';
@@ -248,8 +249,9 @@
     document.querySelector('input[name="mode"][value="static"]').checked = true;
 
     // ================================================================
-    // 2. STATIC MODE (Fixed partitions)
+    // 2. STATIC MODE (Fixed Partitions – MFT)
     // ================================================================
+    // Default partition sizes and allocation requests.
     let blockSizes = [100, 500, 200, 300, 600];
     let allocationRequests = [
         { process_id: 'P1', size: 212 },
@@ -258,6 +260,7 @@
         { process_id: 'P4', size: 426 }
     ];
 
+    // Refresh the displayed partition badges and memory map.
     function refreshPartitionUI() {
         const target = document.getElementById('partition-badge-box');
         let accumulatedSum = 0;
@@ -274,6 +277,7 @@
         renderEmptyStateMemoryMap();
     }
 
+    // Refresh the request queue list.
     function refreshRequestQueueUI() {
         const target = document.getElementById('process-queue-box');
         target.innerHTML = allocationRequests.map((req, idx) => `
@@ -284,9 +288,12 @@
         `).join('');
     }
 
+    // Delete a partition block by its index.
     function dropBlock(index) { blockSizes.splice(index, 1); refreshPartitionUI(); }
+    // Delete a request by its index.
     function dropRequest(index) { allocationRequests.splice(index, 1); refreshRequestQueueUI(); }
 
+    // Show the memory map with all blocks unallocated (empty state).
     function renderEmptyStateMemoryMap() {
         const target = document.getElementById('physical-memory-strip');
         target.innerHTML = blockSizes.map(size => `
@@ -297,9 +304,11 @@
         `).join('');
     }
     
+    // Initial render.
     refreshPartitionUI();
     refreshRequestQueueUI();
 
+    // Add a new partition block.
     document.getElementById('push-partition-btn').addEventListener('click', () => {
         const field = document.getElementById('partition-input');
         const cap = parseInt(field.value);
@@ -310,6 +319,7 @@
         }
     });
 
+    // Add a new request to the queue.
     document.getElementById('push-process-btn').addEventListener('click', () => {
         const field = document.getElementById('process-input');
         const size = parseInt(field.value);
@@ -320,6 +330,7 @@
         }
     });
 
+    // Clear all static mode data.
     document.getElementById('clear-static-btn').addEventListener('click', () => {
         blockSizes = [];
         allocationRequests = [];
@@ -330,6 +341,7 @@
         document.getElementById('metrics-summary-row').style.display = 'none';
     });
 
+    // Run the static allocation simulation.
     document.getElementById('trigger-static-btn').addEventListener('click', async () => {
         if (!blockSizes.length || !allocationRequests.length) {
             alert("Ensure both memory boundaries and size requests are fully populated.");
@@ -359,11 +371,13 @@
         }
     });
 
+    // Render the output of the static allocation.
     function renderStaticOutput(data) {
         resultsContainer.style.display = 'block';
         staticResults.style.display = 'block';
         dynamicResults.style.display = 'none';
 
+        // Update the memory map canvas: show each block as allocated or free.
         const canvas = document.getElementById('physical-memory-strip');
         canvas.innerHTML = data.blocks.map(b => {
             if (b.is_allocated) {
@@ -383,6 +397,7 @@
             }
         }).join('');
 
+        // Fill the terminal with the step‑by‑step trace.
         const consoleLog = document.getElementById('trace-terminal');
         consoleLog.innerHTML = '';
         data.steps.forEach(st => {
@@ -398,7 +413,7 @@
     }
 
     // ================================================================
-    // 3. DYNAMIC MODE (scheduling) – unchanged from previous version
+    // 3. DYNAMIC MODE (MVT – Memory with arrivals, burst, and FCFS admission)
     // ================================================================
     const PROC_COLORS = [
         'rgba(88,166,255,0.55)', 'rgba(86,211,100,0.55)',
@@ -408,6 +423,7 @@
     ];
     const pidColorMap = {};
     let colorIdx = 0;
+    // Assign a consistent color to each process ID.
     function pidColor(pid) {
         if (!pidColorMap[pid]) {
             pidColorMap[pid] = PROC_COLORS[colorIdx % PROC_COLORS.length];
@@ -416,6 +432,7 @@
         return pidColorMap[pid];
     }
 
+    // Add a new row to the dynamic process table.
     document.getElementById('addBtn').addEventListener('click', function () {
         const tbody = document.querySelector('#processTable tbody');
         const rowCount = tbody.rows.length + 1;
@@ -431,6 +448,7 @@
         tbody.appendChild(tr);
     });
 
+    // Delete a row from the dynamic process table.
     document.querySelector('#processTable tbody').addEventListener('click', function (e) {
         if (e.target.classList.contains('del-row-btn')) {
             const tbody = document.querySelector('#processTable tbody');
@@ -440,6 +458,7 @@
         }
     });
 
+    // Clear all dynamic mode data and reset display.
     document.getElementById('clear-dynamic-btn').addEventListener('click', function () {
         resultsContainer.style.display = 'none';
         document.getElementById('metric-total').innerText = '0 KB';
@@ -452,7 +471,9 @@
         colorIdx = 0;
     });
 
+    // Run the dynamic (MVT) simulation.
     document.getElementById('trigger-dynamic-btn').addEventListener('click', async function () {
+        // Gather process data from the table.
         const rows = document.querySelectorAll('.proc-row');
         const processes = Array.from(rows).map(row => ({
             pid: row.querySelector('.p-id').value.trim() || 'P?',
@@ -464,6 +485,7 @@
         const total_memory = parseInt(document.getElementById('total-memory').value) || 60;
         const compaction = document.getElementById('compaction-toggle').checked;
 
+        // The payload uses 'first_fit' as the allocation algorithm and 'fcfs' as the admission order.
         const payload = { 
             processes, 
             total_memory, 
@@ -489,6 +511,7 @@
         }
     });
 
+    // Render the output of the dynamic simulation.
     function renderDynamicOutput(data) {
         const timeline = data.timeline;
         if (!timeline || timeline.length === 0) {
@@ -500,7 +523,7 @@
         staticResults.style.display = 'none';
         dynamicResults.style.display = 'block';
 
-        // Hide summary metrics (MVT doesn't use it)
+        // Hide the summary metrics row for MVT (it's not used).
         document.getElementById('metrics-summary-row').style.display = 'none';
 
         const total = data.total_memory;
@@ -508,7 +531,7 @@
         const timelineDiv = document.getElementById('memory-timeline');
         timelineDiv.innerHTML = '';
 
-        // Legend
+        // Build a legend showing which colour belongs to which process.
         const legend = document.createElement('div');
         legend.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:0.75rem;';
         const allPids = [...new Set(
@@ -522,17 +545,18 @@
         });
         timelineDiv.appendChild(legend);
 
+        // Create a horizontal bar for each time step.
         timeline.forEach(entry => {
             const row = document.createElement('div');
             row.className = 'mem-timeline-row';
 
-            // Time label
+            // Time label.
             const tLabel = document.createElement('div');
             tLabel.className = 'mem-time-label';
             tLabel.textContent = `t = ${entry.time}`;
             row.appendChild(tLabel);
 
-            // --- Memory bar with ABSOLUTE positioning ---
+            // Memory bar with absolute positioning based on block.start and block.size.
             const bar = document.createElement('div');
             bar.className = 'mem-bar';
             bar.style.position = 'relative';
@@ -570,13 +594,13 @@
             });
             row.appendChild(bar);
 
-            // Utilization label
+            // Utilization percentage.
             const uLabel = document.createElement('div');
             uLabel.className = 'mem-util-label';
             uLabel.textContent = entry.utilization + '%';
             row.appendChild(uLabel);
 
-            // Events (allocated / finished / waiting)
+            // Events: allocated, finished, waiting.
             const evLabel = document.createElement('div');
             evLabel.className = 'mem-event-label';
             const parts = [];
@@ -589,7 +613,7 @@
             timelineDiv.appendChild(row);
         });
 
-        // Utilization table
+        // Fill the utilization table.
         const tbody = document.getElementById('utilization-body');
         tbody.innerHTML = '';
         timeline.forEach(entry => {

@@ -79,12 +79,15 @@
 </div>
 
 <script>
+    // The current page reference string (starting with a default).
     let referenceString = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]; 
 
+    // When the page loads, show the initial reference string.
     window.addEventListener('DOMContentLoaded', () => {
         refreshStringUI();
     });
 
+    // Add a page number to the reference string (when the user clicks "Append Page").
     document.getElementById('push-page-btn').addEventListener('click', () => {
         const field = document.getElementById('page-input');
         const pageNum = parseInt(field.value);
@@ -97,6 +100,7 @@
         }
     });
 
+    // Redraw the pills that display the reference string.
     function refreshStringUI() {
         const target = document.getElementById('string-matrix');
         if(!referenceString.length) {
@@ -111,11 +115,13 @@
         `).join('');
     }
 
+    // Remove a page from the reference string by its index.
     function dropPage(index) {
         referenceString.splice(index, 1);
         refreshStringUI();
     }
 
+    // Clear the entire reference string and hide results.
     document.getElementById('clear-sim-btn').addEventListener('click', () => {
         referenceString = [];
         refreshStringUI();
@@ -124,6 +130,7 @@
         document.querySelector('.page-board').style.display = 'none';
     });
 
+    // When the user clicks "Compute Frames", send the data to the backend.
     document.getElementById('trigger-sim-btn').addEventListener('click', async () => {
         if (!referenceString.length) {
             alert("Please append at least one page to the reference string simulation framework.");
@@ -154,21 +161,21 @@
         }
     });
 
+    // Render the page replacement execution grid.
     function renderExecutionGrid(data) {
-        // Render Scoreboard Cards
+        // Update the metrics cards.
         document.getElementById('metric-hits').innerText = data.hit;
         document.getElementById('metric-faults').innerText = data.fault;
         document.getElementById('metric-ratio').innerText = `${(data.ratio_hit * 100).toFixed(1)}%`;
         document.getElementById('metrics-summary-row').style.display = 'grid';
 
-        // Populate sequence stream frame elements
+        // Show the sequence of page requests as coloured blocks.
         const summaryContainer = document.getElementById('frame-results-log-container');
         summaryContainer.innerHTML = '';
         
         data.steps.forEach((step) => {
             const blockNode = document.createElement('div');
-            
-            // Set dynamic background color based on step type
+            // Colour depends on whether it was a hit or a fault.
             let cellBg = step.hit ? '#1f6feb' : '#da3637'; 
             
             blockNode.style.cssText = `
@@ -190,18 +197,18 @@
         });
         document.getElementById('frame-results-log-wrapper').style.display = 'block';
 
-        // Render Frame Execution Matrix Table Trace Below
+        // Build the detailed frame trace table.
         const table = document.getElementById('trace-matrix-table');
         table.innerHTML = '';
 
-        // Header Stream Input Row
+        // Header row: incoming page numbers.
         const headerRow = document.createElement('tr');
         headerRow.innerHTML = `<th class="sticky-side-th">Incoming Page</th>` + data.steps.map(s => `
             <th class="stream-head-cell">${s.page}</th>
         `).join('');
         table.appendChild(headerRow);
 
-        // Render Frame Allocation Traversal Rows
+        // One row per frame.
         const totalFrames = parseInt(document.getElementById('frame-input').value);
         for (let fIdx = 0; fIdx < totalFrames; fIdx++) {
             const row = document.createElement('tr');
@@ -211,6 +218,7 @@
                 const value = step.frames[fIdx];
                 const displayVal = (value !== null && value !== undefined) ? value : '-';
                 
+                // Add special CSS classes for fresh loads and evictions.
                 let extraClass = "";
                 if (!step.hit && step.evicted === null && displayVal !== '-') {
                     const previousStepIdx = stepIdx - 1;
@@ -230,13 +238,14 @@
             table.appendChild(row);
         }
 
-        // Hit / Fault Evaluation Status Footer Row
+        // Bottom status row: HIT or FAULT for each step.
         const statusRow = document.createElement('tr');
         statusRow.innerHTML = `<td class="sticky-side-th status-title-td">Status</td>` + data.steps.map(s => `
             <td class="status-cell ${s.hit ? 'hit-bg' : 'fault-bg'}">${s.hit ? 'HIT' : 'FAULT'}</td>
         `).join('');
         table.appendChild(statusRow);
 
+        // Show the whole page board.
         document.querySelector('.page-board').style.display = 'block';
     }
 </script>
