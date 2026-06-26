@@ -1,13 +1,13 @@
 /* ==========================================
-   1. GLOBAL SYSTEM VARIABLES & RESET
-   ========================================== */
+   GLOBAL SYSTEM VARIABLES & RESET
+========================================== */
 :root {
-  --bg-dark: #0d1117;       /* Dark premium background */
-  --card-bg: #161b22;       /* Slate color for headers and cards */
-  --accent-blue: #58a6ff;   /* Clean electric blue for links & buttons */
-  --text-main: #f0f6fc;     /* Primary readable off-white text */
-  --text-muted: #8b949e;    /* Cool grey for descriptions/inactive links */
-  --border-color: #30363d;  /* Clean thin borders to separate elements */
+  --bg-dark: #0d1117;
+  --card-bg: #161b22;
+  --accent-blue: #58a6ff;
+  --text-main: #f0f6fc;
+  --text-muted: #8b949e;
+  --border-color: #30363d;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
@@ -24,8 +24,8 @@ body {
 }
 
 /* ==========================================
-   2. NAVBAR STYLING (From base.html)
-   ========================================== */
+   NAVBAR
+========================================== */
 nav {
   display: flex;
   justify-content: space-between;
@@ -59,7 +59,6 @@ nav h1 {
   color: var(--accent-blue);
 }
 
-/* Responsive adjustment for small screens */
 @media (max-width: 768px) {
   nav {
     flex-direction: column;
@@ -75,8 +74,8 @@ nav h1 {
 }
 
 /* ==========================================
-   3. CONTENT CONTAINER Layout
-   ========================================== */
+   CONTENT CONTAINER
+========================================== */
 main {
   width: 100%;
 }
@@ -98,11 +97,10 @@ main {
 }
 
 /* ==========================================
-   4. DASHBOARD CARDS GRID
-   ========================================== */
+   DASHBOARD CARDS
+========================================== */
 .cards {
   display: grid;
-  /* Automatically wraps cards into neat rows if window shrinks */
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
 }
@@ -114,12 +112,11 @@ main {
   padding: 28px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Ensures buttons stick nicely to the bottom */
+  justify-content: space-between;
   min-height: 180px;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Hover pop & glow animations */
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--accent-blue);
@@ -139,9 +136,6 @@ main {
   color: var(--text-muted);
 }
 
-/* ==========================================
-   5. BUTTON LINK STYLING
-   ========================================== */
 .card a {
   display: inline-block;
   background-color: transparent;
@@ -158,11 +152,13 @@ main {
 
 .card a:hover {
   background-color: var(--accent-blue);
-  color: #0b0c10; /* Switches to deep dark text for high visibility contrast */
+  color: #0b0c10;
   box-shadow: 0 0 12px rgba(88, 166, 255, 0.3);
 }
 
-/* MERGED: .back-btn and .back-link-btn were near-identical */
+/* ==========================================
+   BACK BUTTONS & NAV CONTROLS
+========================================== */
 .back-btn,
 .back-link-btn {
   display: inline-block;
@@ -180,8 +176,8 @@ main {
 }
 
 /* ==========================================
-   7. INFO SECTIONS (Description & About Us)
-   ========================================== */
+   INFO SECTIONS
+========================================== */
 .info-section {
   margin-top: 50px;
   background-color: var(--card-bg);
@@ -213,59 +209,8 @@ main {
 }
 
 /* ==========================================
-   8. MEMORY MANAGEMENT LAYOUT & COMPONENTS
-   ========================================== */
-.memory-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.algo-tabs {
-  display: flex;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.tab-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.tab-btn.active {
-  background-color: #0c437a;
-  color: var(--accent-blue);
-  border: 1px solid var(--accent-blue);
-}
-
-/* SHARED: .dashboard-grid and .simulator-workspace-grid share the same column layout */
-.dashboard-grid,
-.simulator-workspace-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-}
-
-.dashboard-grid {
-  margin-top: 20px;
-}
-
-.simulator-workspace-grid {
-  align-items: start;
-  margin-top: 24px;
-  width: 100%;
-}
-
+   MEMORY MANAGEMENT LAYOUT
+========================================== */
 .panel {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -286,7 +231,6 @@ main {
   margin-bottom: 15px;
 }
 
-/* MERGED: .input-group input and .entry-field-group input were near-identical */
 .input-group input,
 .entry-field-group input {
   flex: 1;
@@ -298,7 +242,8 @@ main {
   outline: none;
 }
 
-.input-group button, .primary-btn {
+.input-group button,
+.primary-btn {
   background-color: #1f6feb;
   color: white;
   border: none;
@@ -322,134 +267,9 @@ main {
   gap: 12px;
 }
 
-.queue-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.queue-list li {
-  display: flex;
-  justify-content: space-between;
-  background: var(--bg-dark);
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border-color);
-}
-
-/* SHARED: transparent delete/remove button base style */
-.queue-list li button,
-.remove-pill-btn,
-.drop-job-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.queue-list li button {
-  color: #f85149;
-  font-size: 1.1rem;
-}
-
-.tag-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.block-tag {
-  background: var(--bg-dark);
-  border: 1px solid #1f6feb;
-  color: var(--accent-blue);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.block-tag span {
-  margin-left: 6px;
-  cursor: pointer;
-  color: var(--text-muted);
-}
-
-/* Visualization strip styles */
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.legend {
-  display: flex;
-  gap: 15px;
-  font-size: 0.85rem;
-}
-
-.legend-item::before {
-  content: '';
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-right: 6px;
-  vertical-align: middle;
-  border-radius: 2px;
-}
-
-.legend-item.empty::before { background-color: #21262d; border: 1px dashed var(--border-color); }
-.legend-item.allocated::before { background-color: #1f6feb; }
-
-.memory-strip {
-  display: flex;
-  min-height: 120px;
-  background-color: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  margin: 20px 0;
-  overflow: hidden;
-}
-
-.mem-block {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-right: 1px solid var(--border-color);
-  padding: 10px;
-  transition: all 0.3s ease;
-}
-
-.empty-block {
-  background-color: var(--card-bg);
-  border-style: dashed;
-  color: var(--text-muted);
-}
-
-.allocated-block {
-  background-color: #0c437a;
-  border: 1px solid var(--accent-blue);
-  color: var(--text-main);
-}
-
-.log-box {
-  background-color: black;
-  font-family: monospace;
-  padding: 15px;
-  border-radius: 6px;
-  height: 150px;
-  overflow-y: auto;
-}
-
-.log-entry { margin-bottom: 6px; font-size: 0.9rem; }
-.log-entry.allocated { color: #56d364; }
-.log-entry.waiting { color: #f85149; }
-.log-entry.system-msg { color: var(--text-muted); }
-
 /* ==========================================
-   8. CARD-BASED MEMORY ARCHITECTURE
-   ========================================== */
-
-/* MERGED: .unique-mem-layout and .unique-page-layout were identical */
+   CARD‑BASED LAYOUTS (Memory, Page, Disk)
+========================================== */
 .unique-mem-layout,
 .unique-page-layout {
   padding: 20px;
@@ -473,7 +293,6 @@ main {
   font-size: 0.95rem;
 }
 
-/* Three Columns Config Deck */
 .setup-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -490,6 +309,16 @@ main {
   flex-direction: column;
 }
 
+.full-span-card {
+  grid-column: span 2;
+}
+
+@media (max-width: 850px) {
+  .full-span-card {
+    grid-column: span 1;
+  }
+}
+
 .field-lbl {
   font-weight: 600;
   font-size: 0.85rem;
@@ -499,7 +328,6 @@ main {
   margin-bottom: 12px;
 }
 
-/* MERGED: .custom-select and .custom-field-input were identical */
 .custom-select,
 .custom-field-input {
   width: 100%;
@@ -534,8 +362,16 @@ main {
   opacity: 0.9;
 }
 
-.execution-accent { background-color: var(--accent-blue); color: var(--bg-dark); }
-.clear-accent { background: transparent; border: 1px solid var(--border-color); color: #f85149; }
+.execution-accent {
+  background-color: var(--accent-blue);
+  color: var(--bg-dark);
+}
+
+.clear-accent {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: #f85149;
+}
 
 .entry-field-group {
   display: flex;
@@ -556,7 +392,9 @@ main {
   background-color: #38414a;
 }
 
-/* Pill Matrix Layout */
+/* ==========================================
+   PILLS & BADGES (Memory partitions, Page refs)
+========================================== */
 .pill-matrix {
   display: flex;
   flex-wrap: wrap;
@@ -577,15 +415,41 @@ main {
   gap: 6px;
 }
 
+.page-pill {
+  background-color: var(--card-bg);
+  border: 1px solid #1f6feb;
+  color: var(--accent-blue);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .remove-pill-btn {
+  background: transparent;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
   font-size: 1rem;
   line-height: 1;
 }
 
-.remove-pill-btn:hover { color: #f85149; }
+.remove-pill-btn:hover {
+  color: #f85149;
+}
 
-/* Ordered Queue List Layout */
+.empty-msg-lbl {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ==========================================
+   JOB LISTS (Memory request queue)
+========================================== */
 .ordered-job-list {
   margin: 15px 0 0 0;
   padding: 0;
@@ -607,19 +471,26 @@ main {
 }
 
 .drop-job-btn {
+  background: transparent;
+  border: none;
   color: #f85149;
+  cursor: pointer;
   font-size: 0.75rem;
 }
 
-/* Split Visual Displays */
+/* ==========================================
+   DISPLAY BOARDS (Memory & Disk)
+========================================== */
 .display-board {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 20px;
 }
 
-@media(max-width: 900px) {
-  .display-board { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .display-board {
+    grid-template-columns: 1fr;
+  }
 }
 
 .board-column {
@@ -656,10 +527,19 @@ main {
   border-radius: 2px;
 }
 
-.indicator.unallocated { background-color: var(--card-bg); border: 1px solid var(--border-color); }
-.indicator.occupied { background-color: rgba(88, 166, 255, 0.15); border: 1px solid var(--accent-blue); }
+.indicator.unallocated {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
 
-/* Hardware Strip Blueprint */
+.indicator.occupied {
+  background-color: rgba(88, 166, 255, 0.15);
+  border: 1px solid var(--accent-blue);
+}
+
+/* ==========================================
+   MEMORY HARDWARE STRIP
+========================================== */
 .hardware-canvas {
   display: flex;
   min-height: 140px;
@@ -680,7 +560,9 @@ main {
   border-right: 1px solid var(--border-color);
 }
 
-.hardware-cell:last-child { border-right: none; }
+.hardware-cell:last-child {
+  border-right: none;
+}
 
 .unassigned-cell {
   background-color: #0f141c;
@@ -693,8 +575,16 @@ main {
   color: var(--text-main);
 }
 
-.cell-capacity { font-weight: 700; font-size: 0.9rem; }
-.cell-occupant { font-size: 0.75rem; margin-top: 4px; opacity: 0.85; }
+.cell-capacity {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cell-occupant {
+  font-size: 0.75rem;
+  margin-top: 4px;
+  opacity: 0.85;
+}
 
 .metric-footer {
   margin-top: 15px;
@@ -703,7 +593,9 @@ main {
   color: var(--text-muted);
 }
 
-/* Console System Interface */
+/* ==========================================
+   TERMINAL VIEW (Memory log, Disk log)
+========================================== */
 .terminal-view {
   background-color: #05070a;
   border-radius: 8px;
@@ -720,65 +612,81 @@ main {
   line-height: 1.4;
 }
 
-.terminal-row:last-child { margin-bottom: 0; }
-.placeholder-line { color: #444c56; }
-.status-line { color: var(--text-muted); }
-.tracking-allocated { color: #56d364; }
-.tracking-waiting { color: #f85149; }
+.terminal-row:last-child {
+  margin-bottom: 0;
+}
+
+.placeholder-line {
+  color: #444c56;
+}
+
+.status-line {
+  color: var(--text-muted);
+}
+
+.tracking-allocated {
+  color: #56d364;
+}
+
+.tracking-waiting {
+  color: #f85149;
+}
+
+.terminal-card {
+  background-color: #05070a;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.terminal-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.terminal-body {
+  padding: 14px 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.red    { background-color: #f85149; }
+.dot.yellow { background-color: #e3b341; }
+.dot.green  { background-color: #56d364; }
 
 /* ==========================================
-   DISK VISUALIZATION LAYOUT
-   ========================================== */
-
-.full-span-card {
-  grid-column: span 2;
-}
-
-@media(max-width: 850px) {
-  .full-span-card { grid-column: span 1; }
-}
-
-.string-preview-container {
-  margin-top: 20px;
-  background-color: var(--bg-dark);
-  border: 1px dashed var(--border-color);
-  padding: 15px;
-  border-radius: 8px;
-}
-
-.string-preview-container .label-heading {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  display: block;
-  margin-bottom: 10px;
-}
-
-.page-pill {
-  background-color: var(--card-bg);
-  border: 1px solid #1f6feb;
-  color: var(--accent-blue);
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 6px 12px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.empty-msg-lbl {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-/* Operational Performance Scoreboard Cards */
+   METRICS CARDS (Shared)
+========================================== */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   margin-bottom: 25px;
+}
+
+.memory-metrics-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
 }
 
 .metric-card {
@@ -789,7 +697,6 @@ main {
   text-align: center;
 }
 
-/* SHARED: .metric-title and .field-lbl share the same uppercase label style */
 .metric-title {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -803,11 +710,74 @@ main {
   font-size: 1.6rem;
 }
 
-.hit-card { border-top: 3px solid #56d364; }
+.hit-card   { border-top: 3px solid #56d364; }
 .fault-card { border-top: 3px solid #f85149; }
 .ratio-card { border-top: 3px solid var(--accent-blue); }
 
-/* Execution Trace Grid Matrix Data Tables */
+.metric-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: block;
+}
+
+.metric-counter-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ==========================================
+   SIMULATOR WORKSPACE (Page Replacement)
+========================================== */
+.simulator-workspace-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.workspace-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workspace-right-panel {
+  width: 100%;
+  overflow: hidden;
+}
+
+.metrics-summary-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 992px) {
+  .simulator-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   MATRIX TABLES (Page Replacement & Timeline)
+========================================== */
 .table-scroll-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -823,7 +793,8 @@ main {
   font-family: monospace;
 }
 
-.matrix-table th, .matrix-table td {
+.matrix-table th,
+.matrix-table td {
   padding: 12px 16px;
   border: 1px solid var(--border-color);
   min-width: 60px;
@@ -835,7 +806,8 @@ main {
   font-size: 0.85rem;
 }
 
-.sticky-side-th, .frame-label-td {
+.sticky-side-th,
+.frame-label-td {
   background-color: var(--card-bg) !important;
   font-weight: bold;
   position: sticky;
@@ -857,7 +829,6 @@ main {
   color: var(--text-main);
 }
 
-/* Algorithmic Condition Visual Cell Flags */
 .fresh-load-cell {
   background-color: rgba(56, 139, 253, 0.15);
   border: 1px solid var(--accent-blue);
@@ -885,45 +856,8 @@ main {
 }
 
 /* ==========================================
-   Page replacement visualization
-   ========================================== */
-
-.workspace-left-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.metrics-summary-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-
-.metrics-summary-sidebar .metric-counter-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.workspace-right-panel {
-  width: 100%;
-  overflow: hidden;
-}
-
-/* Visualization Header Title */
-.visualization-title {
-  font-size: 1.15rem;
-  color: var(--text-main);
-  margin: 0 0 12px 0;
-  font-weight: 600;
-}
-
+   UNIFIED MATRIX (Page Replacement)
+========================================== */
 .matrix-scroll-container {
   width: 100%;
   overflow-x: auto;
@@ -940,6 +874,13 @@ main {
   font-family: monospace;
 }
 
+.unified-matrix-table td,
+.unified-matrix-table th {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
 .matrix-side-label {
   font-family: var(--font-family);
   font-size: 0.9rem;
@@ -951,7 +892,6 @@ main {
   min-width: 90px;
 }
 
-/* Clear definitions to strip borders/backgrounds entirely from the top row left spacer */
 .cell-spacer-clear {
   border: none !important;
   background: transparent !important;
@@ -968,13 +908,6 @@ main {
   border: 1px solid var(--border-color) !important;
   background-color: var(--card-bg) !important;
   color: var(--text-main) !important;
-}
-
-.unified-matrix-table td,
-.unified-matrix-table th {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .incoming-header-cell {
@@ -1000,7 +933,75 @@ main {
   color: #79c0ff !important;
 }
 
-/* Premium Success Green Button Action Styling */
+/* ==========================================
+   MEMORY TIMELINE
+========================================== */
+.mem-timeline-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.mem-time-label {
+  min-width: 44px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.mem-bar {
+  height: 28px;
+  display: flex;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 420px;
+  flex-shrink: 0;
+}
+
+.mem-segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.1s;
+}
+
+.mem-segment:hover {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.mem-segment.free {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+}
+
+.mem-util-label {
+  font-size: 0.7rem;
+  color: var(--accent-blue);
+  padding-top: 6px;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.mem-event-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  padding-top: 6px;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   ACTION BUTTONS & COLOUR HELPERS
+========================================== */
 .action-success-btn {
   width: 100%;
   padding: 12px;
@@ -1022,13 +1023,30 @@ main {
   transform: scale(0.98);
 }
 
-/* MERGED: .color-hit and .color-ratio were identical */
 .color-hit,
-.color-ratio { color: var(--accent-blue) !important; }
-.color-fault { color: #ff7b72 !important; }
+.color-ratio {
+  color: var(--accent-blue) !important;
+}
 
-@media (max-width: 992px) {
-  .simulator-workspace-grid {
-    grid-template-columns: 1fr;
-  }
+.color-fault {
+  color: #ff7b72 !important;
+}
+
+/* ==========================================
+   STRING PREVIEW (Page Reference)
+========================================== */
+.string-preview-container {
+  margin-top: 20px;
+  background-color: var(--bg-dark);
+  border: 1px dashed var(--border-color);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.string-preview-container .label-heading {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 10px;
 }

@@ -106,13 +106,16 @@
 </main>
 
 <script>
+// ----- Main function called when the user clicks "Execute Simulation" -----
 async function runDiskSimulation() {
+    // Read all input values from the form.
     const algorithm = document.getElementById("alg").value;
     const initial_head = document.getElementById("head").value;
     const disk_size = document.getElementById("disk_size").value;
     const direction = document.getElementById("direction").value;
     const rawQueue = document.getElementById("req").value;
 
+    // Human‑readable labels for the algorithm names.
     const ALGO_LABELS = {
         fcfs: "FCFS",
         sstf: "SSTF",
@@ -122,16 +125,19 @@ async function runDiskSimulation() {
         clook: "C-LOOK"
     };
 
+    // Parse the comma‑separated request queue into an array of integers.
     const request_queue = rawQueue.split(',')
         .map(x => x.trim())
         .filter(x => x !== "")
         .map(x => parseInt(x, 10));
 
+    // Validate the queue.
     if (request_queue.length === 0 || request_queue.some(isNaN)) {
         alert("Please provide a valid comma-separated list of track numbers.");
         return;
     }
 
+    // Validate head and size as numbers.
     const headNum = parseInt(initial_head, 10);
     const sizeNum = parseInt(disk_size, 10);
 
@@ -150,10 +156,12 @@ async function runDiskSimulation() {
         return;
     }
 
+    // Show "computing" while waiting for the response.
     document.getElementById("seek-time").innerText = "Computing...";
     document.getElementById("seek-sequence").innerText = "Calculating path...";
 
     try {
+        // Send the data to the backend.
         const response = await fetch('/simulate/disk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -168,26 +176,28 @@ async function runDiskSimulation() {
 
         const data = await response.json();
 
+        // Handle any errors from the backend.
         if (!response.ok || data.error) {
             throw new Error(data.error || "Disk microservice returned an invalid response code.");
         }
 
-        // Print details instantly to UI Elements
+        // Update the metrics display.
         document.getElementById("seek-time").innerText = data.total_seek_time ?? data.move ?? 0;
 
-        // Replaced .innerText with .innerHTML to cleanly compile HTML Entities
         const sequenceArr = data.seek_sequence || data.order || [];
+        // Show the seek sequence with arrows.
         document.getElementById("seek-sequence").innerHTML = sequenceArr.length > 0 ? sequenceArr.join(" &rarr; ") : "-";
 
-        // Log to terminal window
+        // Update the terminal log.
         document.getElementById("disk-terminal").innerHTML = `
             <div class="terminal-row"><span style="color:#58a6ff;">[ALGO]:</span> Running ${ALGO_LABELS[algorithm] || algorithm.toUpperCase()} Operations</div>
-            <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${initial_head}</div>
-            <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${disk_size - 1}</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[START]:</span> Disk Arm positioned initially at track ${headNum}</div>
+            <div class="terminal-row"><span style="color:#8b949e;">[BOUNDS]:</span> Drive Cylinder track limit range: 0 to ${sizeNum - 1}</div>
             <div class="terminal-row status-line" style="color:#56d364;">Simulation computed instantly! Total Movement: ${data.total_seek_time ?? data.move} cylinders.</div>
         `;
 
     } catch (err) {
+        // Show error message.
         alert("Simulation Error: " + err.message);
         document.getElementById("seek-time").innerText = "FAIL";
         document.getElementById("seek-sequence").innerText = "Error tracking sequence.";

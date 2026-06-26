@@ -117,19 +117,22 @@
 </div>
 
 <script>
-// Toggles time quantum field and extra columns depending on algorithm selection
+// ----- When the algorithm dropdown changes, show/hide relevant inputs -----
 document.getElementById('algoSelect').addEventListener('change', function() {
     const val = this.value;
+    // Show quantum input only for Round Robin or MLQ.
     document.getElementById('quantumContainer').style.display = (val === 'round_robin' || val === 'mlq') ? 'block' : 'none';
     
+    // Show priority column for any algorithm that includes "priority".
     const isPriority = val.includes('priority');
     document.querySelectorAll('.priority-head, .priority-cell').forEach(el => el.style.display = isPriority ? 'table-cell' : 'none');
     
+    // Show queue column only for MLQ.
     const isMlq = val === 'mlq';
     document.querySelectorAll('.queue-head, .queue-cell').forEach(el => el.style.display = isMlq ? 'table-cell' : 'none');
 });
 
-// Appends additional rows dynamically into the process scheduling table
+// ----- Add a new row to the process table -----
 document.getElementById('addBtn').addEventListener('click', function() {
     const tbody = document.querySelector('#processTable tbody');
     const rowCount = tbody.rows.length + 1;
@@ -153,10 +156,11 @@ document.getElementById('addBtn').addEventListener('click', function() {
     tbody.appendChild(tr);
 });
 
-// Handles async payload submittal and visual chart reconstruction
+// ----- Handle form submission: collect data, send to backend, render results -----
 document.getElementById('simulatorForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    e.preventDefault(); // stop page reload
     
+    // Gather process data from table rows.
     const rows = document.querySelectorAll('.proc-row');
     const processes = Array.from(rows).map(row => ({
         pid: row.querySelector('.p-id').value,
@@ -169,6 +173,7 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
     const algorithm = document.getElementById('algoSelect').value;
     const quantum = parseInt(document.getElementById('quantumInput').value) || 4;
 
+    // POST to the backend CPU simulation endpoint.
     fetch('/simulate/cpu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,16 +185,17 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             alert("Simulation Error: " + data.error);
             return;
         }
+        // Show results container.
         document.getElementById('outputPlaceholder').style.display = 'none';
         document.getElementById('resultsContainer').style.display = 'flex';
         
+        // Update metric summaries.
         document.getElementById('avgWait').innerText = data.avg_waiting.toFixed(2);
         document.getElementById('avgTurn').innerText = data.avg_turnaround.toFixed(2);
         
+        // ---- Render Gantt chart ----
         const chart = document.getElementById('ganttChart');
         chart.innerHTML = '';
-        
-        // Setup parent tracking layout attributes
         chart.style.display = 'flex';
         chart.style.flexDirection = 'row';
         chart.style.height = 'auto';
@@ -200,16 +206,15 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
         const totalDuration = data.gantt.length ? data.gantt[data.gantt.length - 1].end : 1;
         
         data.gantt.forEach((block, index) => {
+            // Each block takes up a percentage of the total width.
             const widthPct = ((block.end - block.start) / totalDuration) * 100;
-            
-            // Outer block container wrapping block + absolute positioned timestamps
             const segmentWrapper = document.createElement('div');
             segmentWrapper.style.width = `${widthPct}%`;
             segmentWrapper.style.display = 'flex';
             segmentWrapper.style.flexDirection = 'column';
             segmentWrapper.style.position = 'relative';
             
-            // 1. Process block element 
+            // The coloured bar for the process.
             const blockEl = document.createElement('div');
             blockEl.style.height = '40px';
             blockEl.style.background = '#58a6ff';
@@ -224,7 +229,7 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             blockEl.title = `Process: ${block.pid} | Duration: ${block.start}ms - ${block.end}ms`;
             segmentWrapper.appendChild(blockEl);
             
-            // 2. Clear wrapper container handling relative alignment 
+            // Time labels (start and end) below each block.
             const timeLabelRow = document.createElement('div');
             timeLabelRow.style.position = 'relative';
             timeLabelRow.style.height = '16px';
@@ -232,30 +237,30 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             timeLabelRow.style.fontSize = '10px';
             timeLabelRow.style.color = 'var(--text-muted)';
             
-            // Render the global starting timestamp '0' ONLY under the first element block
+            // For the first block, also show the start time (usually 0).
             if (index === 0) {
                 const startStr = document.createElement('span');
                 startStr.innerText = block.start;
                 startStr.style.position = 'absolute';
                 startStr.style.left = '0';
-                startStr.style.transform = 'translateX(-50%)'; // Center '0' accurately below left-most edge
+                startStr.style.transform = 'translateX(-50%)';
                 timeLabelRow.appendChild(startStr);
             }
             
-            // Render block endpoints centered directly underneath cell splitting lines
+            // Always show the end time of this block.
             const endStr = document.createElement('span');
             endStr.innerText = block.end;
             endStr.style.position = 'absolute';
             endStr.style.right = '0';
-            endStr.style.transform = 'translateX(50%)'; // Center perfectly over the block boundary line
-            
+            endStr.style.transform = 'translateX(50%)';
             timeLabelRow.appendChild(endStr);
+            
             segmentWrapper.appendChild(timeLabelRow);
             chart.appendChild(segmentWrapper);
         });
 
-        // --- Computation Breakdown Table ---
-        // Derive each process's finish time from the last Gantt block it appears in
+        // ---- Build breakdown table (per‑process finish, TAT, WT) ----
+        // First, find the finish time of each process from the Gantt data.
         const finishMap = {};
         data.gantt.forEach(block => {
             if (!finishMap[block.pid] || block.end > finishMap[block.pid]) {
@@ -290,7 +295,7 @@ document.getElementById('simulatorForm').addEventListener('submit', function(e) 
             breakdownBody.appendChild(tr);
         });
 
-        // Footer: sum row + average row
+        // Footer with sum and average.
         breakdownFoot.innerHTML = `
             <tr style="border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.82rem;">
                 <td colspan="4" style="padding:5px 8px;">Sum</td>
