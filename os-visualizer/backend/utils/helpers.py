@@ -199,69 +199,80 @@ def calculate_utilization_at_time(blocks: List[MemoryBlock], time: int) -> Dict[
         'utilization_percent': round(utilization, 2)
     }
 
-def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorithm: str, compaction: bool = False) -> Dict[str, Any]:
+def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorithm: str, compaction: bool = False,
+                               cpu_algorithm: str = 'fcfs', cpu_quantum: int = 4) -> Dict[str, Any]:
     blocks = [MemoryBlock(id=0, start=0, end=total_memory, size=total_memory, is_allocated=False, process_id=None)]
     procs = sorted(processes, key=lambda p: p['arrival'])
     ready_queue = []
-    in_memory = {}   # pid -> remaining burst
+    in_memory = {}          # pid -> {'remaining': int, 'priority': int, 'arrival': int}
     timeline = []
     t = 0
     idx = 0
     n = len(procs)
     pointer = 0
 
-    # BUG FIX 3: use len() not any() — any({'P1': 0}) is False (0 is falsy),
-    # so a process on its last tick would cause the loop to exit one tick early.
-    while idx < n or ready_queue or len(in_memory) > 0:
-
-        # Decrement burst for running processes and collect who finishes
-        finished = []
-        for pid in list(in_memory.keys()):
-            in_memory[pid] -= 1
-            if in_memory[pid] == 0:
-                finished.append(pid)
-
-        # Release finished processes BEFORE admitting new arrivals so freed
-        # memory is available to waiting processes during the same tick.
-        for pid in finished:
-            release_process(blocks, pid)
-            del in_memory[pid]
-
-        # If compaction is enabled, compact immediately after frees so the
-        # memory map reflects defragmentation for the same tick.
-        if compaction:
-            compact_memory(blocks)
-            pointer = 0
-
-        # Admit newly arrived processes
+    while idx < n or ready_queue or any(in_memory.values()):
+        # 1. Admit newly arrived processes to ready_queue
         while idx < n and procs[idx]['arrival'] <= t:
             ready_queue.append(procs[idx])
             idx += 1
 
-        # Attempt allocations for ready processes (compaction only on failure)
+        # 2. Decrement remaining burst for ALL processes in memory
+        finished = []
+        for pid in list(in_memory.keys()):
+            in_memory[pid]['remaining'] -= 1
+            if in_memory[pid]['remaining'] == 0:
+                finished.append(pid)
+
+        # 3. Release finished processes (free their memory)
+        finished_any = False
+        for pid in finished:
+            release_process(blocks, pid)
+            del in_memory[pid]
+            finished_any = True
+
+        # 4. Compact if enabled and something was freed
+        compacted_this_tick = False
+        if compaction and ready_queue and finished_any:
+            compact_memory(blocks)
+            pointer = 0
+            compacted_this_tick = True
+
+        # 5. Allocate waiting processes in the order defined by cpu_algorithm
+        # Sort ready_queue according to the chosen algorithm
+        if cpu_algorithm == 'fcfs':
+            pass  # keep arrival order
+        elif cpu_algorithm in ('sjf_preemptive', 'srtf'):
+            ready_queue.sort(key=lambda p: p['burst'])
+        elif cpu_algorithm == 'priority_preemptive':
+            ready_queue.sort(key=lambda p: p.get('priority', 0))
+        elif cpu_algorithm == 'round_robin':
+            pass  # treat as FCFS for admission order
+
         allocated_this_tick = []
         new_ready = []
         for proc in ready_queue:
             size = proc['memory']
             block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
-
             if block is None and compaction:
                 compact_memory(blocks)
-                # After compaction, pointer must reset to 0 (block list rebuilt)
-                block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, 0)
-
+                pointer = 0
+                block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
             if block is not None:
                 req = MemoryRequest(proc['pid'], size)
                 allocate_block(block, req, blocks)
-                in_memory[proc['pid']] = proc['burst']
+                in_memory[proc['pid']] = {
+                    'remaining': proc['burst'],
+                    'priority': proc.get('priority', 0),
+                    'arrival': proc['arrival']
+                }
                 allocated_this_tick.append(proc['pid'])
                 pointer = new_pointer
             else:
                 new_ready.append(proc)
         ready_queue = new_ready
 
-        # Record snapshot AFTER allocation/release so the timeline reflects the
-        # memory state used for the upcoming tick.
+        # 6. Record snapshot
         total_mem = sum(b.size for b in blocks)
         used = sum(b.size for b in blocks if b.is_allocated)
         util = (used / total_mem * 100) if total_mem else 0.0
@@ -279,6 +290,8 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
 
     return {
         'algorithm': algorithm,
+        'cpu_algorithm': cpu_algorithm,
+        'cpu_quantum': cpu_quantum,
         'compaction': compaction,
         'timeline': timeline,
         'total_memory': total_memory,

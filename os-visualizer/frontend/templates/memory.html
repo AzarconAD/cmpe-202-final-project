@@ -66,14 +66,6 @@
     <!-- ============================================================ -->
     <div id="dynamic-mode" class="setup-row" style="display: none;">
         <div class="setup-card" style="grid-column: span 2;">
-            <label for="algo-select-dynamic" class="field-lbl">Allocation Strategy</label>
-            <select id="algo-select-dynamic" class="custom-select">
-                <option value="first_fit">First Fit</option>
-                <option value="next_fit">Next Fit</option>
-                <option value="best_fit">Best Fit</option>
-                <option value="worst_fit">Worst Fit</option>
-            </select>
-
             <div style="display: flex; gap: 20px; margin: 10px 0;">
                 <div style="flex:1;">
                     <label for="total-memory" class="field-lbl">Total Memory (KB)</label>
@@ -86,6 +78,22 @@
                 </div>
             </div>
 
+            <div style="display:flex;gap:16px;align-items:center;margin-top:8px;">
+                <div style="flex:1;">
+                    <label class="field-lbl">CPU Scheduling Algorithm</label>
+                    <select id="cpu-algo-select" class="custom-select">
+                        <option value="fcfs">FCFS</option>
+                        <option value="sjf_preemptive">SRTF (SJF Preemptive)</option>
+                        <option value="round_robin">Round Robin</option>
+                        <option value="priority_preemptive">Priority (Preemptive)</option>
+                    </select>
+                </div>
+                <div id="quantum-container" style="width:140px; display:none;">
+                    <label class="field-lbl">Quantum (ms)</label>
+                    <input type="number" id="cpu-quantum" class="custom-field-input" value="4" min="1">
+                </div>
+            </div>
+
             <div class="execution-actions">
                 <button id="trigger-dynamic-btn" class="action-btn execution-accent">Run Dynamic Simulation</button>
                 <button id="clear-dynamic-btn" class="action-btn clear-accent">Clear All</button>
@@ -94,14 +102,15 @@
 
         <!-- Process Table (same as before) -->
         <div class="setup-card" style="grid-column: span 2;">
-            <label class="field-lbl">Processes (Arrival, Burst, Memory)</label>
+            <label class="field-lbl">Processes</label>
             <table id="processTable" style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
                 <thead>
                     <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
                         <th style="padding: 5px;">PID</th>
-                        <th style="padding: 5px;">Arrival</th>
-                        <th style="padding: 5px;">Burst</th>
+                        <th style="padding: 5px;">Arrival (ms)</th>
+                        <th style="padding: 5px;">Burst (ms)</th>
                         <th style="padding: 5px;">Memory (KB)</th>
+                        <th class="priority-head" style="padding: 5px; display:none;">Priority</th>
                         <th style="padding: 5px;"></th>
                     </tr>
                 </thead>
@@ -111,6 +120,7 @@
                         <td><input type="number" min="0" value="0" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="5" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="15" class="p-memory" style="width:70px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                        <td class="priority-cell" style="display:none;"><input type="number" min="1" value="1" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><button class="del-row-btn" style="background:transparent;color:var(--text-muted);border:none;cursor:pointer;font-size:1rem;" title="Remove row">✕</button></td>
                     </tr>
                     <tr class="proc-row">
@@ -118,6 +128,7 @@
                         <td><input type="number" min="0" value="1" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="3" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="10" class="p-memory" style="width:70px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                        <td class="priority-cell" style="display:none;"><input type="number" min="1" value="2" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><button class="del-row-btn" style="background:transparent;color:var(--text-muted);border:none;cursor:pointer;font-size:1rem;" title="Remove row">✕</button></td>
                     </tr>
                     <tr class="proc-row">
@@ -125,6 +136,7 @@
                         <td><input type="number" min="0" value="2" class="p-arrival" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="4" class="p-burst" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><input type="number" min="1" value="20" class="p-memory" style="width:70px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
+                        <td class="priority-cell" style="display:none;"><input type="number" min="1" value="3" class="p-priority" style="width:60px; background:transparent; color:#fff; border:1px solid var(--border-color); padding:4px;"></td>
                         <td><button class="del-row-btn" style="background:transparent;color:var(--text-muted);border:none;cursor:pointer;font-size:1rem;" title="Remove row">✕</button></td>
                     </tr>
                 </tbody>
@@ -190,8 +202,9 @@
                 <div class="board-header">
                     <h3>Memory Map Over Time</h3>
                     <div class="status-legend">
-                        <span class="indicator unallocated"></span> Free
-                        <span class="indicator occupied"></span> Allocated
+                        <span class="indicator waiting"></span> ⏳ - Waiting
+                        <span class="indicator allocated"></span> ▶ - Allocated
+                        <span class="indicator finished"></span> ✓ - Finished
                     </div>
                 </div>
                 <div id="memory-timeline" style="overflow-x: auto; background: var(--bg-dark); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);"></div>
@@ -204,7 +217,7 @@
                     <table id="utilization-table" style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
-                                <th style="padding: 6px;">Time (s)</th>
+                                <th style="padding: 6px;">Time (ms)</th>
                                 <th style="padding: 6px;">Used (KB)</th>
                                 <th style="padding: 6px;">Free (KB)</th>
                                 <th style="padding: 6px; text-align:left;">Utilization</th>
@@ -254,6 +267,18 @@
     staticResults.style.display = 'block';
     dynamicResults.style.display = 'none';
     document.querySelector('input[name="mode"][value="static"]').checked = true;
+
+    // ================================================================
+    // CPU ALGORITHM CHANGE HANDLER
+    // ================================================================
+    document.getElementById('cpu-algo-select').addEventListener('change', function() {
+        const val = this.value;
+        // Show quantum only for round_robin
+        document.getElementById('quantum-container').style.display = (val === 'round_robin') ? 'block' : 'none';
+        // Show priority column only for priority_preemptive
+        const isPriority = val === 'priority_preemptive';
+        document.querySelectorAll('.priority-head, .priority-cell').forEach(el => el.style.display = isPriority ? 'table-cell' : 'none');
+    });
 
     // ================================================================
     // 2. STATIC MODE (Fixed partitions)
@@ -372,12 +397,6 @@
         staticResults.style.display = 'block';
         dynamicResults.style.display = 'none';
 
-        document.getElementById('metric-total').innerText = `${data.total_memory} KB`;
-        document.getElementById('metric-used').innerText = `${data.used_memory} KB`;
-        document.getElementById('metric-free').innerText = `${data.free_memory} KB`;
-        document.getElementById('metric-utilization').innerText = `${data.memory_utilization.toFixed(1)}%`;
-        document.getElementById('metrics-summary-row').style.display = 'grid'; document.getElementById('metrics-summary-row').style.gridTemplateColumns = 'repeat(4, 1fr)';
-
         const canvas = document.getElementById('physical-memory-strip');
         canvas.innerHTML = data.blocks.map(b => {
             if (b.is_allocated) {
@@ -433,6 +452,7 @@
     document.getElementById('addBtn').addEventListener('click', function () {
         const tbody = document.querySelector('#processTable tbody');
         const rowCount = tbody.rows.length + 1;
+        const isPriority = document.getElementById('cpu-algo-select').value === 'priority_preemptive';
         const tr = document.createElement('tr');
         tr.className = 'proc-row';
         tr.innerHTML = `
@@ -440,6 +460,7 @@
             <td><input type="number" min="0" value="0" class="p-arrival" style="width:60px;background:transparent;color:#fff;border:1px solid var(--border-color);padding:4px;"></td>
             <td><input type="number" min="1" value="3" class="p-burst" style="width:60px;background:transparent;color:#fff;border:1px solid var(--border-color);padding:4px;"></td>
             <td><input type="number" min="1" value="10" class="p-memory" style="width:70px;background:transparent;color:#fff;border:1px solid var(--border-color);padding:4px;"></td>
+            <td class="priority-cell" style="display:${isPriority ? 'table-cell' : 'none'};"><input type="number" min="1" value="1" class="p-priority" style="width:60px;background:transparent;color:#fff;border:1px solid var(--border-color);padding:4px;"></td>
             <td><button class="del-row-btn" style="background:transparent;color:var(--text-muted);border:none;cursor:pointer;font-size:1rem;" title="Remove row">✕</button></td>
         `;
         tbody.appendChild(tr);
@@ -468,20 +489,38 @@
 
     document.getElementById('trigger-dynamic-btn').addEventListener('click', async function () {
         const rows = document.querySelectorAll('.proc-row');
-        const processes = Array.from(rows).map(row => ({
-            pid: row.querySelector('.p-id').value.trim() || 'P?',
-            arrival: parseInt(row.querySelector('.p-arrival').value) || 0,
-            burst: parseInt(row.querySelector('.p-burst').value) || 1,
-            memory: parseInt(row.querySelector('.p-memory').value) || 1,
-        }));
-
-        const total_memory = parseInt(document.getElementById('total-memory').value) || 60;
-        const algorithm = document.getElementById('algo-select-dynamic').value;
-        const compaction = document.getElementById('compaction-toggle').checked;
-
-        const payload = { processes, total_memory, algorithm, compaction };
-
+        const cpu_algo = document.getElementById('cpu-algo-select').value;
+        
         try {
+            const processes = Array.from(rows).map(row => {
+                const proc = {
+                    pid: row.querySelector('.p-id').value.trim() || 'P?',
+                    arrival: parseInt(row.querySelector('.p-arrival').value) || 0,
+                    burst: parseInt(row.querySelector('.p-burst').value) || 1,
+                    memory: parseInt(row.querySelector('.p-memory').value) || 1,
+                };
+                // Include priority if priority scheduling is selected
+                if (cpu_algo === 'priority_preemptive') {
+                    const priorityInput = row.querySelector('.p-priority');
+                    if (!priorityInput || priorityInput.style.display === 'none') {
+                        throw new Error('Priority field missing for ' + proc.pid);
+                    }
+                    const prio = parseInt(priorityInput.value);
+                    if (isNaN(prio) || prio < 1) {
+                        throw new Error('Invalid priority for ' + proc.pid + ' (must be >= 1)');
+                    }
+                    proc.priority = prio;
+                }
+                return proc;
+            });
+
+            const total_memory = parseInt(document.getElementById('total-memory').value) || 60;
+            const compaction = document.getElementById('compaction-toggle').checked;
+            const cpu_quantum = parseInt(document.getElementById('cpu-quantum').value) || 4;
+
+            // Allocation algorithm for MVT is fixed (moved to CPU settings); keep first_fit here.
+            const payload = { processes, total_memory, algorithm: 'first_fit', compaction, cpu_algorithm: cpu_algo, cpu_quantum };
+
             const response = await fetch('/simulate/memory_scheduling', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -494,7 +533,7 @@
                 alert(data.error || 'Simulation failed.');
             }
         } catch (err) {
-            alert('Network error: ' + err.message);
+            alert('Error: ' + err.message);
         }
     });
 

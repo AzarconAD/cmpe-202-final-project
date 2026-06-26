@@ -1,13 +1,20 @@
 import heapq
+import copy
 from collections import deque
 from typing import List, Dict, Any
 
 from backend.models.process import Process
 from backend.utils.helpers import calculate_metrics, build_result
 
+def _fresh(processes: List[Dict]) -> List[Dict]:
+    """Deep-copy every incoming process dict so previous run state
+    (finish_time, start_time, remaining, priority mutations, etc.)
+    never bleeds into the current run."""
+    return copy.deepcopy(processes)
+
 # ============= FCFS =============
 def fcfs(processes: List[Dict]) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -25,7 +32,7 @@ def fcfs(processes: List[Dict]) -> Dict[str, Any]:
 
 # ============= SJF (Non-Preemptive) =============
 def sjf(processes: List[Dict]) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -57,7 +64,7 @@ def sjf(processes: List[Dict]) -> Dict[str, Any]:
 
 # ============= SJF (Preemptive) =============
 def sjf_preemptive(processes: List[Dict]) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -103,7 +110,7 @@ def sjf_preemptive(processes: List[Dict]) -> Dict[str, Any]:
 
 # ============= Priority Scheduling (Non-Preemptive) =============
 def priority(processes: List[Dict], aging_interval: int = 5) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -125,7 +132,7 @@ def priority(processes: List[Dict], aging_interval: int = 5) -> Dict[str, Any]:
         if current_time - last_aging_time >= aging_interval:
             new_ready_queue = []
             for priority, arrival, pid, p in ready_queue:
-                if pid != last_pid:           # don't age the process currently holding the CPU
+                if pid != last_pid:
                     p.priority = max(0, p.priority - 1)
                 heapq.heappush(new_ready_queue, (p.priority, p.arrival, p.pid, p))
             ready_queue = new_ready_queue
@@ -148,7 +155,7 @@ def priority(processes: List[Dict], aging_interval: int = 5) -> Dict[str, Any]:
 
 # ============= Priority Scheduling (Preemptive) =============
 def priority_preemptive(processes: List[Dict], aging_interval: int = 5) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -171,7 +178,7 @@ def priority_preemptive(processes: List[Dict], aging_interval: int = 5) -> Dict[
         if current_time - last_aging_time >= aging_interval:
             new_ready_queue = []
             for priority, arrival, pid, p in ready_queue:
-                if pid != last_pid:           # don't age the process currently holding the CPU
+                if pid != last_pid:
                     p.priority = max(0, p.priority - 1)
                 heapq.heappush(new_ready_queue, (p.priority, p.arrival, p.pid, p))
             ready_queue = new_ready_queue
@@ -206,7 +213,7 @@ def priority_preemptive(processes: List[Dict], aging_interval: int = 5) -> Dict[
 
 # ============= Round Robin =============
 def round_robin(processes: List[Dict], quantum: int) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0
@@ -252,7 +259,7 @@ def round_robin(processes: List[Dict], quantum: int) -> Dict[str, Any]:
 
 # ============= MLQ (Multi-Level Queue) =============
 def mlq(processes: List[Dict], quantum_system: int = 4) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     
     system_queue = [p for p in procs if p.queue == 'system']
     user_queue = [p for p in procs if p.queue == 'user']
@@ -324,7 +331,7 @@ def mlq(processes: List[Dict], quantum_system: int = 4) -> Dict[str, Any]:
 
 # ============= MLFQ (Multi-Level Feedback Queue) =============
 def mlfq(processes: List[Dict], time_quantums: List[int] = [4, 8, 16]) -> Dict[str, Any]:
-    procs = [Process(**p) for p in processes]
+    procs = [Process(**p) for p in _fresh(processes)]
     procs.sort(key=lambda x: x.arrival)
     gantt = []
     current_time = 0

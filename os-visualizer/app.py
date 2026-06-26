@@ -75,23 +75,36 @@ def simulate_memory_scheduling_route():
     total_memory = data.get("total_memory", 60)
     algorithm = data.get("algorithm", "first_fit")
     compaction = data.get("compaction", False)
+    cpu_algorithm = data.get("cpu_algorithm", "fcfs")
+    cpu_quantum = data.get("cpu_quantum", 4)
 
     try:
         total_memory = int(total_memory)
         safe_processes = []
         for p in processes:
             try:
-                safe_processes.append({
+                entry = {
                     'pid': str(p['pid']),
                     'arrival': int(p['arrival']),
                     'burst': max(1, int(p['burst'])),
                     'memory': max(1, int(p['memory'])),
-                })
+                }
+                if 'priority' in p:
+                    try:
+                        entry['priority'] = int(p['priority'])
+                    except Exception:
+                        entry['priority'] = 0
+                safe_processes.append(entry)
             except (KeyError, TypeError, ValueError):
                 continue
 
+        try:
+            cpu_quantum = int(cpu_quantum)
+        except Exception:
+            cpu_quantum = 4
+
         result = simulate_memory_scheduling(
-            safe_processes, total_memory, algorithm, bool(compaction)
+            safe_processes, total_memory, algorithm, bool(compaction), cpu_algorithm=cpu_algorithm, cpu_quantum=cpu_quantum
         )
         return jsonify(result)
     except Exception as e:
