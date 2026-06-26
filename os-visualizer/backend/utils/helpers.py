@@ -233,7 +233,7 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
 
         # 4. Compact if enabled and something was freed
         compacted_this_tick = False
-        if compaction and ready_queue and finished_any:
+        if compaction and finished_any:
             compact_memory(blocks)
             pointer = 0
             compacted_this_tick = True
@@ -257,6 +257,7 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
             if block is None and compaction:
                 compact_memory(blocks)
                 pointer = 0
+                compacted_this_tick = True                # <-- ADDED
                 block, new_pointer = allocate_with_algorithm(blocks, size, algorithm, pointer)
             if block is not None:
                 req = MemoryRequest(proc['pid'], size)
@@ -285,6 +286,7 @@ def simulate_memory_scheduling(processes: List[Dict], total_memory: int, algorit
             'finished': finished,
             'waiting': [p['pid'] for p in ready_queue],
             'running': list(in_memory.keys()),
+            'compacted': compacted_this_tick,      # <-- ADDED
         })
         t += 1
 
